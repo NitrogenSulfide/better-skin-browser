@@ -1,0 +1,67 @@
+[BetterSkinBrowserMutator]
+FriendlyName="Better Skin Browser"
+Description="Adds a Skins tab to supported in-match ESC menus for browsing, previewing, and activating installed player skins with matching voices."
+
+[SkinBrowserInvasionLoginMenu]
+SkinBrowserTab.Caption="Skins"
+SkinBrowserTab.Hint="Browse and activate installed player skins"
+
+[SkinBrowserLoginMenu]
+SkinBrowserTab.Caption="Skins"
+SkinBrowserTab.Hint="Browse and activate installed player skins"
+
+[SkinBrowserOnslaughtLoginMenu]
+SkinBrowserTab.Caption="Skins"
+SkinBrowserTab.Hint="Browse and activate installed player skins"
+
+[SkinBrowserPage]
+SubCaption="Installed skins"
+WindowName="Better Skin Browser"
+
+[SkinBrowserPanel]
+PanelCaption="Skins"
+
+[SkinBrowserSinglePlayerLoginMenu]
+SkinBrowserTab.Caption="Skins"
+SkinBrowserTab.Hint="Browse and activate installed player skins"
+
+[SkinBrowserWidget]
+ActivateCharacterButton.Caption="Apply"
+ActivateCharacterButton.Hint="Activate the selected character and chosen voice pack."
+BlueCharacterSkin.Caption="Blue"
+BlueCharacterSkin.Hint="Preview UT2004's blue-team materials."
+CharacterAnimation.Caption="Animation:"
+CharacterAnimation.Hint="Preview compatible idle and species taunt animations."
+CharacterAutoRotate.Caption="Auto rotate"
+CharacterAutoRotate.Hint="Resume automatic rotation after a short period without viewport input."
+CharacterGroup.Caption="Group:"
+CharacterGroup.Hint="Group matching characters by race or inferred mesh family."
+CharacterLoopAnimation.Caption="Loop animation"
+CharacterLoopAnimation.Hint="Repeat the selected preview animation until another is selected."
+CharacterPreviewInput.Hint="Drag to rotate, Shift-drag or right-drag to pan, and use the wheel to zoom."
+CharacterResultLabel.Caption="0 skins"
+CharacterSearch.Caption="Search:"
+CharacterSearch.Hint="Filter by character name, race, sex, mesh, or package."
+CharacterShockRifle.Caption="Hold weapon"
+CharacterShockRifle.Hint="Preview the default weapon-holding stance."
+CharacterSort.Caption="Sort:"
+CharacterSort.Hint="Choose the order used within each group."
+CharacterViewMode.Caption="Portrait"
+CharacterViewMode.Hint="Show the selected skin's portrait."
+CharacterVoiceLine.Caption="Preview line:"
+CharacterVoiceLine.Hint="Preview lines from the voice pack selected above."
+CharacterVoicePack.Caption="Voice pack:"
+CharacterVoicePack.Hint="Choose the voice saved with this character; Character default uses the skin's assigned voice."
+DefaultCharacterVoice.Caption="Default"
+DefaultCharacterVoice.Hint="Select this character's assigned default voice pack. Press Apply to save it."
+CloseBrowserButton.Caption="Close"
+CloseBrowserButton.Hint="Close Better Skin Browser without applying the preview selection."
+NormalCharacterSkin.Caption="Normal"
+NormalCharacterSkin.Hint="Preview the normal character materials."
+PreviewStatus.Caption="3D preview"
+RedCharacterSkin.Caption="Red"
+RedCharacterSkin.Hint="Preview UT2004's red-team materials."
+ResetCharacterView.Caption="Reset"
+ResetCharacterView.Hint="Restore the default camera and model rotation."
+SelectedCharacterDetails.Caption="Race | sex | package"
+SelectedCharacterName.Caption="Select a character"
