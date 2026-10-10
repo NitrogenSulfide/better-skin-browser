@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create and verify the player-facing Better Skin Browser release archive."""
+"""Create and verify the player-facing Unreal Skin Browser release archive."""
 from __future__ import annotations
 
 import hashlib
@@ -11,7 +11,7 @@ import zipfile
 PROJECT = Path(__file__).resolve().parent
 DIST = PROJECT / "dist"
 SYSTEM = DIST / "System"
-ARCHIVE = DIST / "BetterSkinBrowser-v1.0.zip"
+ARCHIVE = DIST / "BetterSkinBrowser-v1.2.zip"
 CHECKSUMS = DIST / "SHA256SUMS.txt"
 
 

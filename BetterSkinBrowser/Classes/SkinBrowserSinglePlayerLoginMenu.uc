@@ -1,4 +1,4 @@
-// Preserves the tournament-specific Game tab while adding Better Skin Browser.
+// Preserves the tournament-specific Game tab while adding Unreal Skin Browser.
 class SkinBrowserSinglePlayerLoginMenu extends UT2K4SinglePlayerLoginMenu;
 
 var() GUITabItem SkinBrowserTab;

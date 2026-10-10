@@ -3,7 +3,11 @@
 class SkinBrowserWidget extends GUIPanel
     DependsOn(xUtil);
 
+var automated GUIButton AllSkinsButton;
+var automated GUIButton FavoritesViewButton;
+var automated GUIButton FavoriteButton;
 var automated moEditBox SearchBox;
+var automated GUIButton ClearSearchButton;
 var automated moComboBox SortBox;
 var automated moComboBox GroupBox;
 var automated GUIListBox CharacterList;
@@ -28,6 +32,9 @@ var automated GUILabel DetailsLabel;
 var automated GUILabel StatusLabel;
 var automated GUIButton ApplyButton;
 var automated GUIButton CloseButton;
+var automated GUILabel TitleLabel;
+var automated GUIButton CreditsButton;
+var float TitleCenterX, TitleReferenceX;
 
 var array<xUtil.PlayerRecord> PlayerRecords;
 var array<int> CharacterOrder;
@@ -58,6 +65,8 @@ var bool bBrowserInitialized;
 var string EquippedCharacterName;
 var string SelectedVoiceClassName;
 var bool bUseCharacterDefaultVoice;
+var bool bFavoritesOnly;
+var float ApplyRequestMessageUntil;
 
 // Match Motorpool's slate-blue cards, using widget bounds so the same frame
 // follows both the floating browser and the in-match Skins tab.
@@ -96,7 +105,7 @@ function bool DrawBrowserCards(Canvas C)
     OldY = C.CurY;
     // Keep the result count with the filters/list and the help/status line
     // with the preview controls. Apply and Close remain outside the cards.
-    DrawBrowserCard(C, 0.040, 0.080, 0.400, 0.635);
+    DrawBrowserCard(C, 0.040, 0.080, 0.400, 0.760);
     DrawBrowserCard(C, 0.500, 0.080, 0.380, 0.760);
     C.Style = OldStyle;
     C.DrawColor = OldColor;
@@ -125,6 +134,121 @@ event Closed(GUIComponent Sender, bool bCancelled)
 {
     SetPreviewActorsHidden(True);
     Super.Closed(Sender, bCancelled);
+}
+
+function DrawActiveViewMarker(Canvas C, GUIButton Button, bool bActive)
+{
+    local color OldColor;
+    local byte OldStyle;
+    local float OldX, OldY;
+
+    if (!bActive)
+        return;
+    OldColor = C.DrawColor;
+    OldStyle = C.Style;
+    OldX = C.CurX;
+    OldY = C.CurY;
+    C.Style = 1;
+    C.SetDrawColor(105, 200, 255, 255);
+    C.SetPos(Button.ActualLeft() + 2, Button.ActualTop() + Button.ActualHeight() - 3);
+    C.DrawTile(Texture'Engine.WhiteSquareTexture', Button.ActualWidth() - 4, 2, 0, 0, 2, 2);
+    C.DrawColor = OldColor;
+    C.Style = OldStyle;
+    C.SetPos(OldX, OldY);
+}
+
+function DrawAllViewMarker(Canvas C)
+{
+    DrawActiveViewMarker(C, AllSkinsButton, !bFavoritesOnly);
+}
+
+function DrawFavoritesViewMarker(Canvas C)
+{
+    DrawActiveViewMarker(C, FavoritesViewButton, bFavoritesOnly);
+}
+
+function bool IsFavoriteRecord(int RecordIndex)
+{
+    return RecordIndex >= 0 && RecordIndex < PlayerRecords.Length &&
+        class'SkinBrowserFavorites'.static.Contains(PlayerRecords[RecordIndex].DefaultName);
+}
+
+function UpdateFavoriteControls()
+{
+    local int i, Count;
+
+    for (i = 0; i < PlayerRecords.Length; i++)
+        if (IsSelectableRecord(i) && IsFavoriteRecord(i))
+            Count++;
+    FavoritesViewButton.Caption = "Favorites (" $ Count $ ")";
+    if (SelectedRecord >= 0 && SelectedRecord < PlayerRecords.Length)
+    {
+        FavoriteButton.EnableMe();
+        if (IsFavoriteRecord(SelectedRecord))
+            FavoriteButton.Caption = "Remove favorite";
+        else
+            FavoriteButton.Caption = "Add favorite";
+    }
+    else
+    {
+        FavoriteButton.Caption = "Add favorite";
+        FavoriteButton.DisableMe();
+    }
+}
+
+function bool ShowAllSkins(GUIComponent Sender)
+{
+    if (bFavoritesOnly)
+    {
+        bFavoritesOnly = False;
+        RebuildCharacterList(True, -1);
+    }
+    return True;
+}
+
+function bool ShowFavorites(GUIComponent Sender)
+{
+    if (!bFavoritesOnly)
+    {
+        bFavoritesOnly = True;
+        RebuildCharacterList(True, -1);
+    }
+    return True;
+}
+
+function bool ToggleFavorite(GUIComponent Sender)
+{
+    local int NextRecord, i;
+    local GUIList List;
+    local bool bRemoving;
+
+    if (SelectedRecord < 0 || SelectedRecord >= PlayerRecords.Length)
+        return True;
+    List = CharacterList.List;
+    bRemoving = IsFavoriteRecord(SelectedRecord);
+    NextRecord = -1;
+    if (bRemoving && bFavoritesOnly)
+    {
+        // Prefer the next visible character, or the preceding one at the end.
+        // Section headings never become the preview selection.
+        for (i = List.Index + 1; i < List.ItemCount; i++)
+            if (!List.Elements[i].bSection)
+            {
+                NextRecord = int(List.GetExtraAtIndex(i));
+                break;
+            }
+        if (NextRecord < 0)
+            for (i = List.Index - 1; i >= 0; i--)
+                if (!List.Elements[i].bSection)
+                {
+                    NextRecord = int(List.GetExtraAtIndex(i));
+                    break;
+                }
+    }
+    class'SkinBrowserFavorites'.static.SetFavorite(
+        PlayerRecords[SelectedRecord].DefaultName, !bRemoving);
+    RebuildCharacterList(True, NextRecord);
+    return True;
 }
 
 function InitializeBrowser()
@@ -207,6 +331,56 @@ function RefreshEquippedCharacter()
     }
 }
 
+// Fill a ten-vertex star with ordinary canvas tiles; no font glyph or asset dependency.
+function DrawFavoriteStar(Canvas C, float X, float Y, float Size)
+{
+    local int i, j, k, Row, Count;
+    local float Angle, Radius, ScanY, Temp;
+    local float VX[10], VY[10], Crossings[10];
+
+    for (i = 0; i < 10; i++)
+    {
+        Angle = -1.5707963 + float(i) * 0.6283185;
+        if ((i % 2) == 0)
+            Radius = Size * 0.5;
+        else
+            Radius = Size * 0.22;
+        VX[i] = X + Size * 0.5 + Cos(Angle) * Radius;
+        VY[i] = Y + Size * 0.5 + Sin(Angle) * Radius;
+    }
+    C.Style = 1;
+    C.SetDrawColor(255, 220, 70, 255);
+    for (Row = 0; Row < int(Size); Row++)
+    {
+        ScanY = Y + Row + 0.5;
+        Count = 0;
+        j = 9;
+        for (i = 0; i < 10; i++)
+        {
+            if ((VY[i] <= ScanY && VY[j] > ScanY) ||
+                (VY[j] <= ScanY && VY[i] > ScanY))
+            {
+                Crossings[Count] = VX[i] + (ScanY - VY[i]) *
+                    (VX[j] - VX[i]) / (VY[j] - VY[i]);
+                Count++;
+            }
+            j = i;
+        }
+        for (i = 1; i < Count; i++)
+            for (k = i; k > 0 && Crossings[k] < Crossings[k - 1]; k--)
+            {
+                Temp = Crossings[k];
+                Crossings[k] = Crossings[k - 1];
+                Crossings[k - 1] = Temp;
+            }
+        for (i = 0; i + 1 < Count; i += 2)
+        {
+            C.SetPos(Crossings[i], Y + Row);
+            C.DrawTile(Texture'Engine.WhiteSquareTexture', Crossings[i + 1] - Crossings[i], 1, 0, 0, 2, 2);
+        }
+    }
+}
+
 function DrawCharacterItem(Canvas C, int Item, float X, float Y, float W, float H,
     bool bSelected, bool bPending)
 {
@@ -214,7 +388,8 @@ function DrawCharacterItem(Canvas C, int Item, float X, float Y, float W, float 
     local GUIStyles DrawStyle;
     local color SavedColor, SavedFontColor;
     local byte SavedStyle;
-    local bool bEquipped;
+    local bool bEquipped, bFavorite;
+    local float MarkerSize, SeparatorHeight, TextWidth, TextHeight, TitleWidth;
     local int RecordIndex;
 
     List = CharacterList.List;
@@ -227,6 +402,7 @@ function DrawCharacterItem(Canvas C, int Item, float X, float Y, float W, float 
     {
         RecordIndex = int(List.GetExtraAtIndex(Item));
         bEquipped = PlayerRecords[RecordIndex].DefaultName ~= EquippedCharacterName;
+        bFavorite = IsFavoriteRecord(RecordIndex);
         if (bSelected && List.SelectedStyle != None)
         {
             DrawStyle = List.SelectedStyle;
@@ -256,7 +432,35 @@ function DrawCharacterItem(Canvas C, int Item, float X, float Y, float W, float 
         DrawStyle.FontColors[List.MenuState].B = 255;
         DrawStyle.FontColors[List.MenuState].A = 255;
     }
-    DrawStyle.DrawText(C, List.MenuState, X + 4, Y, W - 8, H,
+    if (List.Elements[Item].bSection)
+    {
+        // Match Motorpool's category headers: a centered gold title flanked by
+        // thin gold rules, kept clear of the scrollbar.
+        DrawStyle.FontColors[List.MenuState].R = 255;
+        DrawStyle.FontColors[List.MenuState].G = 210;
+        DrawStyle.FontColors[List.MenuState].B = 0;
+        DrawStyle.FontColors[List.MenuState].A = 255;
+        DrawStyle.TextSize(C, List.MenuState, List.GetItemAtIndex(Item), TextWidth, TextHeight, List.FontScale);
+        TitleWidth = FMin(W - 24.0, TextWidth + 16.0);
+        SeparatorHeight = FMax(1.0, Round(Controller.ResY / 1080.0));
+        C.Style = 1;
+        C.SetDrawColor(255, 210, 0, 255);
+        C.SetPos(X + 3, Y + Round((H - SeparatorHeight) * 0.5));
+        C.DrawTile(Texture'Engine.WhiteSquareTexture', (W - TitleWidth) * 0.5 - 3, SeparatorHeight, 0, 0, 2, 2);
+        C.SetPos(X + (W + TitleWidth) * 0.5, Y + Round((H - SeparatorHeight) * 0.5));
+        C.DrawTile(Texture'Engine.WhiteSquareTexture', (W - TitleWidth) * 0.5 - 3, SeparatorHeight, 0, 0, 2, 2);
+        DrawStyle.DrawText(C, List.MenuState, X + (W - TitleWidth) * 0.5, Y, TitleWidth, H,
+            TXTA_Center, List.GetItemAtIndex(Item), List.FontScale);
+        DrawStyle.FontColors[List.MenuState] = SavedFontColor;
+        C.DrawColor = SavedColor;
+        C.Style = SavedStyle;
+        return;
+    }
+    MarkerSize = FMin(H * 0.70, 24.0 * Controller.ResX / 1920.0);
+    if (bFavorite)
+        DrawFavoriteStar(C, X + 7, Y + (H - MarkerSize) * 0.5, MarkerSize);
+    // Reserve a symmetric gutter so stars do not overlap centered long names.
+    DrawStyle.DrawText(C, List.MenuState, X + MarkerSize + 12, Y, W - 2 * (MarkerSize + 12), H,
         TXTA_Center, List.GetItemAtIndex(Item), List.FontScale);
     DrawStyle.FontColors[List.MenuState] = SavedFontColor;
     C.DrawColor = SavedColor;
@@ -373,16 +577,28 @@ function bool IsSelectableRecord(int RecordIndex)
 
 function bool CharacterMatches(int RecordIndex, string Query)
 {
-    local string Searchable;
-
-    if (Query == "")
-        return True;
+    local string Searchable, Word, Ch;
+    local int i;
 
     Searchable = Caps(PlayerRecords[RecordIndex].DefaultName @
-        PlayerRecords[RecordIndex].Race @
-        PlayerRecords[RecordIndex].Sex @
-        PlayerRecords[RecordIndex].MeshName);
-    return InStr(Searchable, Caps(Query)) >= 0;
+        PlayerRecords[RecordIndex].Race @ PlayerRecords[RecordIndex].Sex @
+        PlayerRecords[RecordIndex].MeshName @
+        PackageName(PlayerRecords[RecordIndex].BodySkinName) @
+        PackageName(PlayerRecords[RecordIndex].FaceSkinName));
+    // Treat ASCII whitespace as word separators, including pasted tabs/newlines.
+    for (i = 0; i <= Len(Query); i++)
+    {
+        Ch = Mid(Query, i, 1);
+        if (i == Len(Query) || (Asc(Ch) >= 9 && Asc(Ch) <= 13) || Ch == " ")
+        {
+            if (Word != "" && InStr(Searchable, Caps(Word)) < 0)
+                return False;
+            Word = "";
+        }
+        else
+            Word $= Ch;
+    }
+    return True;
 }
 
 function string CharacterListCaption(int RecordIndex)
@@ -395,16 +611,19 @@ function string CharacterListCaption(int RecordIndex)
     return PlayerRecords[RecordIndex].DefaultName $ "  [" $ RaceName $ "]";
 }
 
-function RebuildCharacterList()
+function RebuildCharacterList(optional bool bPreservePreview, optional int PreferredRecord)
 {
     local GUIList List;
-    local int i, RecordIndex, ListIndex, VisibleCount, SelectableCount;
+    local int i, RecordIndex, ListIndex, VisibleCount, SelectableCount, FavoriteCount;
+    local int PreviousRecord, PreviousTop;
     local string Query, CurrentGroup, LastGroup;
 
     List = CharacterList.List;
     if (List == None)
         return;
 
+    PreviousRecord = SelectedRecord;
+    PreviousTop = List.Top;
     Query = SearchBox.GetText();
     bRebuildingList = True;
     List.Clear();
@@ -416,6 +635,10 @@ function RebuildCharacterList()
             continue;
 
         SelectableCount++;
+        if (IsFavoriteRecord(RecordIndex))
+            FavoriteCount++;
+        else if (bFavoritesOnly)
+            continue;
         if (CharacterMatches(RecordIndex, Query))
         {
             CurrentGroup = GroupName(RecordIndex);
@@ -429,12 +652,16 @@ function RebuildCharacterList()
         }
     }
 
-    if (Query == "")
+    if (bFavoritesOnly)
+        ResultLabel.Caption = string(VisibleCount) @ "of" @ string(FavoriteCount) @ "favorite skins";
+    else if (Query == "")
         ResultLabel.Caption = string(SelectableCount) @ "selectable skins";
     else
         ResultLabel.Caption = string(VisibleCount) @ "of" @ string(SelectableCount) @
             "selectable skins";
     ListIndex = List.FindIndex(string(SelectedRecord), True, True);
+    if (ListIndex < 0 && PreferredRecord >= 0 && bPreservePreview)
+        ListIndex = List.FindIndex(string(PreferredRecord), True, True);
     if ((ListIndex < 0) && (VisibleCount > 0))
         ListIndex = FindFirstCharacterListIndex(List);
 
@@ -446,8 +673,17 @@ function RebuildCharacterList()
     else
         SelectedRecord = -1;
 
+    if (bPreservePreview)
+    {
+        List.SetTopItem(PreviousTop);
+        // Clamp the saved scroll position to keep a newly chosen neighbor visible.
+        if (ListIndex >= 0)
+            List.SetIndex(ListIndex);
+    }
     bRebuildingList = False;
-    UpdateSelection();
+    UpdateFavoriteControls();
+    if (!bPreservePreview || PreviousRecord != SelectedRecord)
+        UpdateSelection();
 }
 
 function int FindFirstCharacterListIndex(GUIList List)
@@ -462,7 +698,17 @@ function int FindFirstCharacterListIndex(GUIList List)
 
 function SearchChanged(GUIComponent Sender)
 {
-    RebuildCharacterList();
+    if (!bUpdatingControls)
+        RebuildCharacterList(True, -1);
+}
+
+function bool ClearSearchClicked(GUIComponent Sender)
+{
+    bUpdatingControls = True;
+    SearchBox.SetText("");
+    bUpdatingControls = False;
+    RebuildCharacterList(True, -1);
+    return True;
 }
 
 function SortOrGroupChanged(GUIComponent Sender)
@@ -507,11 +753,16 @@ function UpdateSelection()
 {
     local xUtil.PlayerRecord Rec;
 
+    UpdateFavoriteControls();
+
     bPreviewReady = False;
     if ((SelectedRecord < 0) || (SelectedRecord >= PlayerRecords.Length))
     {
         NameLabel.Caption = "No matching character";
-        DetailsLabel.Caption = "Clear or change the search text.";
+        if (bFavoritesOnly)
+            DetailsLabel.Caption = "Choose All skins or change the search text.";
+        else
+            DetailsLabel.Caption = "Clear or change the search text.";
         StatusLabel.Caption = "";
         ApplyButton.DisableMe();
         PortraitPane.Image = None;
@@ -528,6 +779,8 @@ function UpdateSelection()
     PortraitPane.Image = Rec.Portrait;
     ApplyButton.EnableMe();
     LoadPreview(Rec, True);
+    if (ApplyWaitSeconds() > 0)
+        ShowApplyWait();
 }
 
 function ClearPreview()
@@ -643,6 +896,8 @@ function SetPreviewMessage(string Message)
 
 function RestorePreviewModeVisibility()
 {
+    if (bBrowserInitialized)
+        UpdateFavoriteControls();
     PortraitPane.SetVisibility(bPortraitView);
     PreviewInput.SetVisibility(!bPortraitView);
     UpdatePreviewControlAvailability();
@@ -1420,6 +1675,35 @@ function bool DrawPreview(Canvas C)
     return True;
 }
 
+// Controller replicates SetPawnClass to the server unreliably, but does not
+// replicate SPCTimeStamp. xPlayer enforces TimeSeconds + 10.0 on authority.
+// On NM_Client this field tracks our own request window across browser widgets;
+// it cannot acknowledge a server outcome or detect changes from other menus.
+function int ApplyWaitSeconds()
+{
+    local float Remaining;
+    local int Seconds;
+    local PlayerController PC;
+
+    PC = PlayerOwner();
+    if (PC == None || PC.Level.NetMode == NM_Standalone)
+        return 0;
+    Remaining = FMax(0.0, PC.SPCTimeStamp - PC.Level.TimeSeconds);
+    Seconds = int(Remaining);
+    if (Remaining > float(Seconds))
+        Seconds++;
+    return Seconds;
+}
+
+function ShowApplyWait()
+{
+    ApplyButton.DisableMe();
+    ApplyRequestMessageUntil = 0;
+    StatusLabel.Caption = "Wait " $ ApplyWaitSeconds() $ " s before changing skin";
+    StatusLabel.KillTimer();
+    StatusLabel.SetTimer(0.25, True);
+}
+
 function bool ApplyClicked(GUIComponent Sender)
 {
     local PlayerController PC;
@@ -1430,6 +1714,11 @@ function bool ApplyClicked(GUIComponent Sender)
         return True;
 
     PC = PlayerOwner();
+    if (ApplyWaitSeconds() > 0)
+    {
+        ShowApplyWait();
+        return True;
+    }
     Rec = PlayerRecords[SelectedRecord];
     // The stock SetPawnClass anti-spam timestamp is also used in standalone
     // play, where it can reject a legitimate menu selection before respawn.
@@ -1438,6 +1727,8 @@ function bool ApplyClicked(GUIComponent Sender)
     if ((PC.Level.NetMode == NM_Standalone) && (xPlayer(PC) != None))
         xPlayer(PC).SPCTimeStamp = 0;
     PC.ConsoleCommand("ChangeCharacter" @ Rec.DefaultName);
+    if (PC.Level.NetMode == NM_Client)
+        PC.SPCTimeStamp = PC.Level.TimeSeconds + 10.0;
     if (!PC.IsA('xPlayer'))
         PC.UpdateURL("Character", Rec.DefaultName, True);
     if (Rec.Sex ~= "Female")
@@ -1451,20 +1742,107 @@ function bool ApplyClicked(GUIComponent Sender)
     if (Rec.DefaultName ~= EquippedCharacterName)
         NameLabel.Caption = Rec.DefaultName @ "[Equipped]";
 
-    PlayerOwner().ClientPlaySound(sound'MenuSounds.selectJ', False, 1.0,
-        SLOT_Interface);
-    StatusLabel.Caption = "Skin active - respawn to apply";
+    if (PC.Level.NetMode == NM_Standalone)
+    {
+        PC.ClientPlaySound(sound'MenuSounds.selectJ', False, 1.0, SLOT_Interface);
+        StatusLabel.Caption = "Skin active - respawn to apply";
+    }
+    else
+    {
+        StatusLabel.Caption = "Change requested - respawn to apply";
+        ApplyButton.DisableMe();
+    }
     StatusLabel.KillTimer();
-    StatusLabel.SetTimer(2.0, False);
+    if (PC.Level.NetMode == NM_Standalone)
+        StatusLabel.SetTimer(2.0, False);
+    else
+    {
+        ApplyRequestMessageUntil = PC.Level.TimeSeconds + 2.0;
+        StatusLabel.SetTimer(0.25, True);
+    }
     return True;
 }
 
 function ApplyStatusTimer(GUIComponent Sender)
 {
+    if (ApplyWaitSeconds() > 0 && SelectedRecord >= 0)
+    {
+        ApplyButton.DisableMe();
+        if (PlayerOwner().Level.TimeSeconds >= ApplyRequestMessageUntil)
+            StatusLabel.Caption = "Wait " $ ApplyWaitSeconds() $ " s before changing skin";
+        return;
+    }
+    StatusLabel.KillTimer();
+    if (SelectedRecord < 0)
+    {
+        StatusLabel.Caption = "";
+        return;
+    }
+    ApplyButton.EnableMe();
     if (bPortraitView)
         StatusLabel.Caption = "Portrait preview";
     else
         SetPreviewMessage(PreviewMessage);
+}
+
+// Center the title under the owning window's caption (map name in match menus,
+// window name in the standalone page) rather than over the cards, at any size.
+function bool DrawCenteredTitle(Canvas C)
+{
+    local GUIComponent Owner;
+    local FloatingWindow Window;
+    local font SavedFont;
+    local color SavedColor;
+    local byte SavedStyle;
+    local float SavedScaleX, SavedScaleY, TextWidth, TextHeight, Scale, MaxWidth;
+
+    if (TitleLabel.Caption == "")
+        return True;
+    Owner = MenuOwner;
+    while (Owner != None && FloatingWindow(Owner) == None)
+        Owner = Owner.MenuOwner;
+    Window = FloatingWindow(Owner);
+    if (Window != None && Window.t_WindowTitle != None)
+    {
+        TitleReferenceX = Window.t_WindowTitle.ActualLeft() + Window.t_WindowTitle.ActualWidth() * 0.5;
+        MaxWidth = Window.ActualWidth() - 16;
+    }
+    else
+    {
+        TitleReferenceX = ActualLeft() + ActualWidth() * 0.5;
+        MaxWidth = ActualWidth() - 16;
+    }
+    SavedFont = C.Font;
+    SavedColor = C.DrawColor;
+    SavedStyle = C.Style;
+    SavedScaleX = C.FontScaleX;
+    SavedScaleY = C.FontScaleY;
+    C.Font = Controller.GetMenuFont(TitleLabel.TextFont).GetFontB(C.SizeX, C.SizeY);
+    C.FontScaleX = 1;
+    C.FontScaleY = 1;
+    C.TextSize(TitleLabel.Caption, TextWidth, TextHeight);
+    Scale = FMin(1.0, FMin(MaxWidth / FMax(1, TextWidth),
+        TitleLabel.ActualHeight() / FMax(1, TextHeight)));
+    C.FontScaleX = FMax(0.01, Scale);
+    C.FontScaleY = C.FontScaleX;
+    TitleCenterX = Round(TitleReferenceX - TextWidth * Scale * 0.5) + TextWidth * Scale * 0.5;
+    C.SetPos(TitleCenterX - TextWidth * Scale * 0.5,
+        Round(TitleLabel.ActualTop() + (TitleLabel.ActualHeight() - TextHeight * Scale) * 0.5));
+    C.DrawColor = TitleLabel.TextColor;
+    C.Style = 1;
+    C.DrawText(TitleLabel.Caption);
+    C.Font = SavedFont;
+    C.DrawColor = SavedColor;
+    C.Style = SavedStyle;
+    C.FontScaleX = SavedScaleX;
+    C.FontScaleY = SavedScaleY;
+    return True;
+}
+
+function bool CreditsClicked(GUIComponent Sender)
+{
+    Controller.OpenMenu("BetterSkinBrowser.SkinBrowserCreditsPage");
+    return True;
 }
 
 function bool CloseClicked(GUIComponent Sender)
@@ -1484,31 +1862,99 @@ function Free()
 
 defaultproperties
 {
+    Begin Object Class=GUILabel Name=BrowserTitle
+        Caption="Unreal Skin Browser"
+        TextAlign=TXTA_Center
+        TextColor=(R=255,G=210,B=0,A=255)
+        TextFont="UT2HeaderFont"
+        WinTop=0.012000
+        WinLeft=0.040000
+        WinWidth=0.840000
+        WinHeight=0.060000
+        bBoundToParent=True
+        bScaleToParent=True
+        OnDraw=SkinBrowserWidget.DrawCenteredTitle
+    End Object
+    TitleLabel=GUILabel'BetterSkinBrowser.SkinBrowserWidget.BrowserTitle'
+    Begin Object Class=GUIButton Name=AllCharacterSkins
+        Caption="All skins"
+        Hint="Browse all installed selectable skins."
+        WinTop=0.095000
+        WinLeft=0.055000
+        WinWidth=0.181000
+        WinHeight=0.044000
+        TabOrder=0
+        bBoundToParent=True
+        OnClick=SkinBrowserWidget.ShowAllSkins
+        OnRendered=SkinBrowserWidget.DrawAllViewMarker
+    End Object
+    AllSkinsButton=GUIButton'BetterSkinBrowser.SkinBrowserWidget.AllCharacterSkins'
+
+    Begin Object Class=GUIButton Name=FavoriteCharacterSkins
+        Caption="Favorites (0)"
+        Hint="Browse favorite skins using the current search, sort, and grouping."
+        WinTop=0.095000
+        WinLeft=0.244000
+        WinWidth=0.181000
+        WinHeight=0.044000
+        TabOrder=1
+        bBoundToParent=True
+        OnClick=SkinBrowserWidget.ShowFavorites
+        OnRendered=SkinBrowserWidget.DrawFavoritesViewMarker
+    End Object
+    FavoritesViewButton=GUIButton'BetterSkinBrowser.SkinBrowserWidget.FavoriteCharacterSkins'
+
+    Begin Object Class=GUIButton Name=ToggleCharacterFavorite
+        Caption="Add favorite"
+        Hint="Save or remove this character as a local favorite immediately."
+        WinTop=0.855000
+        WinLeft=0.515000
+        WinWidth=0.185000
+        WinHeight=0.050000
+        TabOrder=20
+        bBoundToParent=True
+        OnClick=SkinBrowserWidget.ToggleFavorite
+    End Object
+    FavoriteButton=GUIButton'BetterSkinBrowser.SkinBrowserWidget.ToggleCharacterFavorite'
+
     Begin Object Class=moEditBox Name=CharacterSearch
         Caption="Search:"
         CaptionWidth=0.180000
-        Hint="Filter by character name, race, sex, mesh, or package."
+        Hint="Match every search word in any order: name, race, sex, mesh, or skin texture package."
         OnCreateComponent=CharacterSearch.InternalOnCreateComponent
-        WinTop=0.095000
+        WinTop=0.150000
         WinLeft=0.055000
-        WinWidth=0.370000
+        WinWidth=0.326000
         WinHeight=0.050000
-        TabOrder=0
+        TabOrder=2
         bBoundToParent=True
         OnChange=SkinBrowserWidget.SearchChanged
     End Object
     SearchBox=moEditBox'BetterSkinBrowser.SkinBrowserWidget.CharacterSearch'
+
+    Begin Object Class=GUIButton Name=ClearCharacterSearch
+        Caption="x"
+        Hint="Clear search while keeping the current view, sort, grouping, and visible selection."
+        WinTop=0.150000
+        WinLeft=0.389000
+        WinWidth=0.036000
+        WinHeight=0.050000
+        TabOrder=3
+        bBoundToParent=True
+        OnClick=SkinBrowserWidget.ClearSearchClicked
+    End Object
+    ClearSearchButton=GUIButton'BetterSkinBrowser.SkinBrowserWidget.ClearCharacterSearch'
 
     Begin Object Class=moComboBox Name=CharacterSort
         Caption="Sort:"
         CaptionWidth=0.180000
         Hint="Choose the order used within each group."
         OnCreateComponent=CharacterSort.InternalOnCreateComponent
-        WinTop=0.150000
+        WinTop=0.205000
         WinLeft=0.055000
         WinWidth=0.370000
         WinHeight=0.045000
-        TabOrder=1
+        TabOrder=4
         bBoundToParent=True
         OnChange=SkinBrowserWidget.SortOrGroupChanged
     End Object
@@ -1519,11 +1965,11 @@ defaultproperties
         CaptionWidth=0.180000
         Hint="Group matching characters by race or inferred mesh family."
         OnCreateComponent=CharacterGroup.InternalOnCreateComponent
-        WinTop=0.200000
+        WinTop=0.255000
         WinLeft=0.055000
         WinWidth=0.370000
         WinHeight=0.045000
-        TabOrder=2
+        TabOrder=5
         bBoundToParent=True
         OnChange=SkinBrowserWidget.SortOrGroupChanged
     End Object
@@ -1533,11 +1979,11 @@ defaultproperties
         OnCreateComponent=InstalledCharacterList.InternalOnCreateComponent
         StyleName="ServerBrowserGrid"
         FontScale=FNS_Medium
-        WinTop=0.255000
+        WinTop=0.310000
         WinLeft=0.055000
         WinWidth=0.370000
-        WinHeight=0.390000
-        TabOrder=3
+        WinHeight=0.455000
+        TabOrder=6
         bBoundToParent=True
         OnChange=SkinBrowserWidget.CharacterChanged
     End Object
@@ -1547,7 +1993,7 @@ defaultproperties
         Caption="0 skins"
         TextAlign=TXTA_Left
         TextColor=(R=255,G=255,B=0,A=255)
-        WinTop=0.665000
+        WinTop=0.785000
         WinLeft=0.055000
         WinWidth=0.370000
         WinHeight=0.040000
@@ -1612,7 +2058,7 @@ defaultproperties
         WinWidth=0.086000
         WinHeight=0.040000
         RenderWeight=0.550000
-        TabOrder=7
+        TabOrder=10
         bBoundToParent=True
         OnClick=SkinBrowserWidget.ToggleViewMode
     End Object
@@ -1651,7 +2097,7 @@ defaultproperties
         WinLeft=0.515000
         WinWidth=0.062000
         WinHeight=0.040000
-        TabOrder=4
+        TabOrder=7
         bBoundToParent=True
         OnClick=SkinBrowserWidget.SetNormalSkin
     End Object
@@ -1664,7 +2110,7 @@ defaultproperties
         WinLeft=0.583000
         WinWidth=0.055000
         WinHeight=0.040000
-        TabOrder=5
+        TabOrder=8
         bBoundToParent=True
         OnClick=SkinBrowserWidget.SetRedSkin
     End Object
@@ -1677,7 +2123,7 @@ defaultproperties
         WinLeft=0.644000
         WinWidth=0.055000
         WinHeight=0.040000
-        TabOrder=6
+        TabOrder=9
         bBoundToParent=True
         OnClick=SkinBrowserWidget.SetBlueSkin
     End Object
@@ -1690,7 +2136,7 @@ defaultproperties
         WinLeft=0.797000
         WinWidth=0.062000
         WinHeight=0.040000
-        TabOrder=8
+        TabOrder=11
         bBoundToParent=True
         OnClick=SkinBrowserWidget.ResetPreviewView
     End Object
@@ -1705,7 +2151,7 @@ defaultproperties
         WinLeft=0.515000
         WinWidth=0.350000
         WinHeight=0.040000
-        TabOrder=9
+        TabOrder=12
         bBoundToParent=True
         OnChange=SkinBrowserWidget.AutoRotateChanged
     End Object
@@ -1720,7 +2166,7 @@ defaultproperties
         WinLeft=0.515000
         WinWidth=0.350000
         WinHeight=0.040000
-        TabOrder=10
+        TabOrder=13
         bBoundToParent=True
         OnChange=SkinBrowserWidget.WeaponChanged
     End Object
@@ -1735,7 +2181,7 @@ defaultproperties
         WinLeft=0.515000
         WinWidth=0.350000
         WinHeight=0.040000
-        TabOrder=11
+        TabOrder=14
         bBoundToParent=True
         OnChange=SkinBrowserWidget.LoopAnimationChanged
     End Object
@@ -1750,7 +2196,7 @@ defaultproperties
         WinLeft=0.515000
         WinWidth=0.350000
         WinHeight=0.042000
-        TabOrder=12
+        TabOrder=15
         bAlwaysNotify=True
         bBoundToParent=True
         OnChange=SkinBrowserWidget.AnimationChanged
@@ -1766,7 +2212,7 @@ defaultproperties
         WinLeft=0.515000
         WinWidth=0.280000
         WinHeight=0.042000
-        TabOrder=13
+        TabOrder=16
         bBoundToParent=True
         OnChange=SkinBrowserWidget.VoicePackChanged
     End Object
@@ -1779,7 +2225,7 @@ defaultproperties
         WinLeft=0.800000
         WinWidth=0.065000
         WinHeight=0.042000
-        TabOrder=14
+        TabOrder=17
         bBoundToParent=True
         OnClick=SkinBrowserWidget.DefaultVoiceClicked
     End Object
@@ -1794,7 +2240,7 @@ defaultproperties
         WinLeft=0.515000
         WinWidth=0.350000
         WinHeight=0.042000
-        TabOrder=15
+        TabOrder=18
         bAlwaysNotify=True
         bBoundToParent=True
         OnChange=SkinBrowserWidget.VoiceChanged
@@ -1821,20 +2267,33 @@ defaultproperties
         WinLeft=0.715000
         WinWidth=0.130000
         WinHeight=0.050000
-        TabOrder=16
+        TabOrder=21
         bBoundToParent=True
         OnClick=SkinBrowserWidget.ApplyClicked
     End Object
     ApplyButton=GUIButton'BetterSkinBrowser.SkinBrowserWidget.ActivateCharacterButton'
 
+    Begin Object Class=GUIButton Name=ShowCreditsButton
+        Caption="Credits"
+        Hint="Show who made Unreal Skin Browser."
+        WinTop=0.855000
+        WinLeft=0.040000
+        WinWidth=0.120000
+        WinHeight=0.050000
+        TabOrder=23
+        bBoundToParent=True
+        OnClick=SkinBrowserWidget.CreditsClicked
+    End Object
+    CreditsButton=GUIButton'BetterSkinBrowser.SkinBrowserWidget.ShowCreditsButton'
+
     Begin Object Class=GUIButton Name=CloseBrowserButton
         Caption="Close"
-        Hint="Close Better Skin Browser without applying the preview selection."
+        Hint="Close Unreal Skin Browser without applying the preview selection."
         WinTop=0.855000
         WinLeft=0.850000
         WinWidth=0.100000
         WinHeight=0.050000
-        TabOrder=17
+        TabOrder=22
         bVisible=False
         bBoundToParent=True
         OnClick=SkinBrowserWidget.CloseClicked

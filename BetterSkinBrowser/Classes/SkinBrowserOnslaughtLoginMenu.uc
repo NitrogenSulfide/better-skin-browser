@@ -1,4 +1,4 @@
-// Preserves Onslaught's Map tab while adding Better Skin Browser.
+// Preserves Onslaught's Map tab while adding Unreal Skin Browser.
 class SkinBrowserOnslaughtLoginMenu extends UT2K4OnslaughtLoginMenu;
 
 var() GUITabItem SkinBrowserTab;

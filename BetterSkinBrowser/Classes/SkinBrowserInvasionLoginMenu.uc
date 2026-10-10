@@ -1,4 +1,4 @@
-// Preserves Invasion's specialized Game tab while adding Better Skin Browser.
+// Preserves Invasion's specialized Game tab while adding Unreal Skin Browser.
 class SkinBrowserInvasionLoginMenu extends UT2K4InvasionLoginMenu;
 
 var() GUITabItem SkinBrowserTab;

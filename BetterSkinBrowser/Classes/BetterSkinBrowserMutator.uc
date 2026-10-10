@@ -63,7 +63,7 @@ defaultproperties
 {
     ConfigMenuClassName="BetterSkinBrowser.SkinBrowserPage"
     IconMaterialName="MutatorArt.nosym"
-    FriendlyName="Better Skin Browser"
+    FriendlyName="Unreal Skin Browser"
     Description="Adds a Skins tab to supported in-match ESC menus for browsing, previewing, and activating installed player skins with matching voices."
     bAddToServerPackages=True
 }

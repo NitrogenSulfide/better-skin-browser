@@ -1,4 +1,4 @@
-// Actual Better Skin Browser tab used by the stock in-match login menus.
+// Actual Unreal Skin Browser tab used by the stock in-match login menus.
 class SkinBrowserPanel extends MidGamePanel;
 
 var automated SkinBrowserWidget Browser;

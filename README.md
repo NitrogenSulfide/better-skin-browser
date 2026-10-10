@@ -1,41 +1,43 @@
-# Better Skin Browser
+# Unreal Skin Browser
 
-Search, preview, and select your installed Unreal Tournament 2004 characters from an in-game **Skins** tab.
+Formerly **Better Skin Browser**. Search, favorite, preview, and select your installed Unreal Tournament 2004 characters from an in-game **Skins** tab.
 
 Created by **Blue Natto**, known as **CissiaLikesEggs** on GameBanana. Published on GitHub under **NitrogenSulfide**.
 
-**[Download v1.0](https://github.com/NitrogenSulfide/better-skin-browser/releases/tag/v1.0)** | **[GameBanana page and screenshots](https://gamebanana.com/mods/714077)** | **[Report a bug](https://github.com/NitrogenSulfide/better-skin-browser/issues)**
+**[Download v1.2](https://github.com/NitrogenSulfide/unreal-skin-browser/releases/tag/v1.2)** | **[GameBanana page and screenshots](https://gamebanana.com/mods/714077)** | **[Report a bug](https://github.com/NitrogenSulfide/unreal-skin-browser/issues)**
 
-Players should download `BetterSkinBrowser-v1.0.zip` from the release assets. GitHub's automatic source archives are for developers.
+Players should download `BetterSkinBrowser-v1.2.zip` from the release assets. GitHub's automatic source archives are for developers.
 
 ## Features
 
-- Live search by name, race, sex, mesh, or package, with sorting and grouping.
+- Search with any words in any order across name, race, sex, mesh, and skin texture package, with a one-click clear button.
+- Favorites with All skins and Favorites views, saved locally and shared between the menu and the in-match tab.
+- Sorting, plus grouping by race or family/package with gold category headings.
 - Interactive 3D and portrait previews, including normal, red-team, and blue-team materials.
 - Rotation, panning, zoom, animation and voice-line previews.
 - Voice-pack selection synchronized with UT2004 Player Settings, plus a Default button.
 - Apply a character and voice together; the character appears on your next respawn.
-- Layout designed for 1920x1080 through 3840x2160.
+- Layout designed for 1920x1080 through 3840x2160, with a Credits window.
 
 No character packs are included. Custom skins and voices must be installed separately.
 
 ## Install and use
 
-1. Close UT2004 and extract the release ZIP into its installation directory. Back up any existing Better Skin Browser files first.
-2. In Instant Action, add **Better Skin Browser** from the Mutators tab.
+1. Close UT2004 and extract the release ZIP into its installation directory. Upgrading from Better Skin Browser? Overwrite the existing files; your favorites and server settings carry over because the package keeps the `BetterSkinBrowser` name.
+2. In Instant Action, add **Unreal Skin Browser** from the Mutators tab.
 3. Start a match, press **ESC**, and open **Skins**.
 
 You can also open it through **Configure Mutators** without enabling it for a match. With the mutator active, the console command `mutate skinbrowser` opens the standalone browser.
 
 ## Compatibility and limitations
 
-Version 1.0 was tested with native OldUnreal UT2004 build 3374 in Instant Action, listen-server, and separate dedicated-server/client sessions. Classic retail 3369 is expected to work but was not officially tested for this release.
+Version 1.2 was tested with native OldUnreal UT2004 build 3374 in Instant Action, listen-server, and separate dedicated-server/client sessions. Classic retail 3369 is expected to work but was not officially tested for this release.
 
-Online servers must install the package and enable the mutator; installing it only on a client does not add the tab to arbitrary servers. Remote servers retain the stock ten-second character-change cooldown after joining.
+Online servers must install the package and enable the mutator; installing it only on a client does not add the tab to arbitrary servers. Remote servers retain the stock ten-second character-change cooldown; in network play Apply shows a clear request message and a countdown.
 
-Custom replacement ESC menus keep their existing interface; use the console fallback when the mutator is active. Incomplete character packs can have missing previews or voice lines. Favorites and advanced filters are not included in v1.0.
+Custom replacement ESC menus keep their existing interface; use the console fallback when the mutator is active. Incomplete character packs can have missing previews or voice lines. Advanced filters beyond search, sorting, grouping, and Favorites are not included yet.
 
-See [the player README](release/README.txt) for full usage and uninstall instructions and [the changelog](CHANGELOG.md) for the v1.0 changes.
+See [the player README](release/README.txt) for full usage and uninstall instructions and [the changelog](CHANGELOG.md) for release history.
 
 ## Build from source
 
@@ -56,11 +58,11 @@ On Windows, with PowerShell:
 .\build.ps1 -GameDir 'C:\path\to\OldUnreal\UT2004' -ConfigDir 'C:\path\to\writable\System'
 ```
 
-Both entry points compile and round-trip export the classes, then create `dist/BetterSkinBrowser-v1.0.zip` and checksums. Rebuilt packages may differ from the published ZIP because Unreal packages and ZIPs can contain build-specific metadata. Use the published asset for the exact GameBanana release.
+Both entry points compile and round-trip export the classes, then create `dist/BetterSkinBrowser-v1.2.zip` and checksums. Rebuilt packages may differ from the published ZIP because Unreal packages and ZIPs can contain build-specific metadata. Use the published asset for the exact GameBanana release.
 
 ## Bugs and contributions
 
-Please include your UT2004 build, operating system, game type, whether the match is local or on a remote server, reproduction steps, and relevant log excerpts. Remove personal information from logs before sharing. The issue tracker is for Better Skin Browser; character packs have their own authors.
+Please include your UT2004 build, operating system, game type, whether the match is local or on a remote server, reproduction steps, and relevant log excerpts. Remove personal information from logs before sharing. The issue tracker is for Unreal Skin Browser; character packs have their own authors.
 
 This repository is the public release source. Future releases should use the same version and player ZIP on GitHub and GameBanana.
 

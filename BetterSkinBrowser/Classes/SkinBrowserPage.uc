@@ -36,7 +36,7 @@ defaultproperties
     // the GUI stack become empty when it closes so ESC returns to gameplay.
     bAllowedAsLast=True
     SubCaption="Installed skins"
-    WindowName="Better Skin Browser"
+    WindowName="Unreal Skin Browser"
     DefaultLeft=0.050000
     DefaultTop=0.060000
     DefaultWidth=0.900000

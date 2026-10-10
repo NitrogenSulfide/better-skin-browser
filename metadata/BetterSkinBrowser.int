@@ -1,6 +1,15 @@
 [BetterSkinBrowserMutator]
-FriendlyName="Better Skin Browser"
+FriendlyName="Unreal Skin Browser"
 Description="Adds a Skins tab to supported in-match ESC menus for browsing, previewing, and activating installed player skins with matching voices."
+
+[SkinBrowserCreditsPage]
+AlsoKnownAs="(aka CissiaLikesEggs)"
+WindowName="Credits"
+CreditsAuthor.Caption="Blue Natto"
+CreditsRole.Caption="Creator of Unreal Skin Browser"
+CreditsThanks.Caption="Thank you for your support!  \(^o^)/"
+CreditsClose.Caption="Close"
+CreditsClose.Hint="Return to Unreal Skin Browser."
 
 [SkinBrowserInvasionLoginMenu]
 SkinBrowserTab.Caption="Skins"
@@ -16,7 +25,7 @@ SkinBrowserTab.Hint="Browse and activate installed player skins"
 
 [SkinBrowserPage]
 SubCaption="Installed skins"
-WindowName="Better Skin Browser"
+WindowName="Unreal Skin Browser"
 
 [SkinBrowserPanel]
 PanelCaption="Skins"
@@ -26,6 +35,15 @@ SkinBrowserTab.Caption="Skins"
 SkinBrowserTab.Hint="Browse and activate installed player skins"
 
 [SkinBrowserWidget]
+BrowserTitle.Caption="Unreal Skin Browser"
+ShowCreditsButton.Caption="Credits"
+ShowCreditsButton.Hint="Show who made Unreal Skin Browser."
+AllCharacterSkins.Caption="All skins"
+AllCharacterSkins.Hint="Browse all installed selectable skins."
+FavoriteCharacterSkins.Caption="Favorites (0)"
+FavoriteCharacterSkins.Hint="Browse favorite skins using the current search, sort, and grouping."
+ToggleCharacterFavorite.Caption="Add favorite"
+ToggleCharacterFavorite.Hint="Save or remove this character as a local favorite immediately."
 ActivateCharacterButton.Caption="Apply"
 ActivateCharacterButton.Hint="Activate the selected character and chosen voice pack."
 BlueCharacterSkin.Caption="Blue"
@@ -41,7 +59,7 @@ CharacterLoopAnimation.Hint="Repeat the selected preview animation until another
 CharacterPreviewInput.Hint="Drag to rotate, Shift-drag or right-drag to pan, and use the wheel to zoom."
 CharacterResultLabel.Caption="0 skins"
 CharacterSearch.Caption="Search:"
-CharacterSearch.Hint="Filter by character name, race, sex, mesh, or package."
+CharacterSearch.Hint="Match every search word in any order: name, race, sex, mesh, or skin texture package."
 CharacterShockRifle.Caption="Hold weapon"
 CharacterShockRifle.Hint="Preview the default weapon-holding stance."
 CharacterSort.Caption="Sort:"
@@ -55,7 +73,7 @@ CharacterVoicePack.Hint="Choose the voice saved with this character; Character d
 DefaultCharacterVoice.Caption="Default"
 DefaultCharacterVoice.Hint="Select this character's assigned default voice pack. Press Apply to save it."
 CloseBrowserButton.Caption="Close"
-CloseBrowserButton.Hint="Close Better Skin Browser without applying the preview selection."
+CloseBrowserButton.Hint="Close Unreal Skin Browser without applying the preview selection."
 NormalCharacterSkin.Caption="Normal"
 NormalCharacterSkin.Hint="Preview the normal character materials."
 PreviewStatus.Caption="3D preview"
@@ -65,3 +83,5 @@ ResetCharacterView.Caption="Reset"
 ResetCharacterView.Hint="Restore the default camera and model rotation."
 SelectedCharacterDetails.Caption="Race | sex | package"
 SelectedCharacterName.Caption="Select a character"
+ClearCharacterSearch.Caption="x"
+ClearCharacterSearch.Hint="Clear search while keeping the current view, sort, grouping, and visible selection."
