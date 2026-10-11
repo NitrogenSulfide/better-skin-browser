@@ -6,7 +6,7 @@ Created by **Blue Natto**, known as **CissiaLikesEggs** on GameBanana. Published
 
 **[Download v1.3](https://github.com/NitrogenSulfide/unreal-skin-browser/releases/tag/v1.3)** | **[GameBanana page and screenshots](https://gamebanana.com/mods/714077)** | **[Report a bug](https://github.com/NitrogenSulfide/unreal-skin-browser/issues)**
 
-Players should download `BetterSkinBrowser-v1.3.zip` from the release assets. GitHub's automatic source archives are for developers.
+Players should download `BetterSkinBrowser-v1.3.zip` from the release assets. It is the same file as the download on [GameBanana](https://gamebanana.com/mods/714077). GitHub's automatic source archives are for developers.
 
 ## Features
 
@@ -62,7 +62,7 @@ On Windows, with PowerShell:
 .\build.ps1 -GameDir 'C:\path\to\OldUnreal\UT2004' -ConfigDir 'C:\path\to\writable\System'
 ```
 
-Both entry points compile and round-trip export the classes, then create `dist/BetterSkinBrowser-v1.3.zip` and checksums. Rebuilt packages may differ from the published ZIP because Unreal packages and ZIPs can contain build-specific metadata. Use the published asset for the exact release.
+Both entry points compile and round-trip export the classes, then create `dist/BetterSkinBrowser-v1.3.zip` and checksums. Rebuilt packages may differ from the published ZIP because Unreal packages and ZIPs can contain build-specific metadata. Use the published asset for the exact GitHub and GameBanana release.
 
 ## Bugs and contributions
 
