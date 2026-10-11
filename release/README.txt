@@ -1,4 +1,4 @@
-UNREAL SKIN BROWSER 1.2
+UNREAL SKIN BROWSER 1.3
 =======================
 
 Unreal Skin Browser adds a searchable Skins tab to supported UT2004 in-match
@@ -11,16 +11,24 @@ name, so existing favorites and server mutator settings keep working.
 FEATURES
 --------
 
-- Persistent local favorites with All skins and Favorites views
+- Keyboard navigation: Search is ready on open, arrows and paging browse skins,
+  and Ctrl+Enter, Ctrl+D, and Ctrl+F apply, favorite, and return to Search
+- A Shortcuts button with a keyboard shortcuts window
+- A Recent view of the last twelve skins you equipped, newest first
+- A portrait Grid layout, remembered between sessions, with category rows when
+  grouping is on
+- Hide broken skins (on by default) for installed skins whose model cannot load
+- A dice button that previews a random skin from the current view
+- Persistent local favorites with All skins, Favorites, and Recent views
 - Every search word matches in any order across name, race, sex, mesh/model,
   or BodySkin/FaceSkin texture packages (case-insensitive)
 - An x button clears search without changing view, sort, grouping, or a visible selection
 - Sorting and grouping by name, race, family/package, or sex, with centered
   gold category headings
 - A gold Unreal Skin Browser title centered under the menu caption
-- A Credits button with a small credits window
+- A gold Credits button with a small credits window
 - Interactive 3D model and portrait previews
-- Normal, red-team, and blue-team material previews
+- Normal, red-team, and blue-team material previews with team-colored buttons
 - Mouse rotation, panning, zoom, reset, and automatic rotation
 - A voice-pack selector synchronized with UT2004 Player Settings
 - A one-click Default button for the selected character's assigned voice
@@ -63,7 +71,17 @@ a match. When the mutator is active, the console fallback is:
 USAGE
 -----
 
-- Select a character from the list to preview it.
+- Select a character from the list or grid to preview it. Search is focused
+  when the browser opens; Up/Down and Page Up/Down browse skins, Home/End jump
+  to the first or last skin, and Enter moves from Search to the list or grid.
+- Ctrl+Enter applies, Ctrl+D adds or removes a favorite, and Ctrl+F returns to
+  Search. The Shortcuts button lists every keyboard shortcut.
+- Recent lists the skins you equipped most recently. Sort and Group do not
+  apply there.
+- Grid / List switches between portraits and the text list.
+- The dice button previews a random skin from what is shown. It never applies.
+- Hide broken skins hides installed skins whose model cannot be loaded. Each
+  model is checked once and remembered; the first check may pause briefly.
 - Add favorite / Remove favorite bookmarks the previewed character immediately.
 - All skins and Favorites above Search use the same search, sort, and grouping.
 - Gold stars identify favorites independently of the red equipped-skin row.
@@ -129,7 +147,7 @@ mod. The compiled .u file is the version UT2004 loads.
 GitHub automatically offers "Source code (zip)" and "Source code (tar.gz)"
 downloads. Those are repository snapshots for developers who want to read or
 build the code. Regular players should download the separately attached
-BetterSkinBrowser-v1.2.zip release.
+BetterSkinBrowser-v1.3.zip release.
 
 COPYRIGHT AND LICENSE
 ---------------------
@@ -149,6 +167,17 @@ affiliated with or endorsed by Epic Games or OldUnreal.
 
 VERSION HISTORY
 ---------------
+
+1.3
+- Added keyboard navigation and a Shortcuts button with a shortcuts window.
+- Added a Recent view of the last twelve equipped skins.
+- Added a portrait Grid layout with category rows when grouping is on.
+- Added Hide broken skins, on by default, with a hidden-skin count.
+- Added a dice button that previews a random skin.
+- Colored the Red and Blue preview buttons, made Credits gold, aligned the
+  search x button, and gave the preview controls more room.
+- Disabled Sort and Group in the Recent view.
+- Fixed the list scrollbar grip not dragging after switching views.
 
 1.2
 - Renamed from Better Skin Browser to Unreal Skin Browser. Package, favorites,

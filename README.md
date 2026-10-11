@@ -4,16 +4,20 @@ Formerly **Better Skin Browser**. Search, favorite, preview, and select your ins
 
 Created by **Blue Natto**, known as **CissiaLikesEggs** on GameBanana. Published on GitHub under **NitrogenSulfide**.
 
-**[Download v1.2](https://github.com/NitrogenSulfide/unreal-skin-browser/releases/tag/v1.2)** | **[GameBanana page and screenshots](https://gamebanana.com/mods/714077)** | **[Report a bug](https://github.com/NitrogenSulfide/unreal-skin-browser/issues)**
+**[Download v1.3](https://github.com/NitrogenSulfide/unreal-skin-browser/releases/tag/v1.3)** | **[GameBanana page and screenshots](https://gamebanana.com/mods/714077)** | **[Report a bug](https://github.com/NitrogenSulfide/unreal-skin-browser/issues)**
 
-Players should download `BetterSkinBrowser-v1.2.zip` from the release assets. GitHub's automatic source archives are for developers.
+Players should download `BetterSkinBrowser-v1.3.zip` from the release assets. GitHub's automatic source archives are for developers.
 
 ## Features
 
 - Search with any words in any order across name, race, sex, mesh, and skin texture package, with a one-click clear button.
-- Favorites with All skins and Favorites views, saved locally and shared between the menu and the in-match tab.
+- Keyboard navigation: Search is ready when the browser opens, arrows and paging browse skins, and Ctrl+Enter, Ctrl+D, and Ctrl+F apply, favorite, and return to Search. A Shortcuts button lists them.
+- Favorites, Recent (the last twelve skins you equipped), and All skins views, saved locally and shared between the menu and the in-match tab.
+- A portrait Grid layout as well as the list, remembered between sessions.
+- Hide broken skins (on by default) hides installed skins whose model cannot load.
+- A dice button previews a random skin from the current view.
 - Sorting, plus grouping by race or family/package with gold category headings.
-- Interactive 3D and portrait previews, including normal, red-team, and blue-team materials.
+- Interactive 3D and portrait previews, including normal, red-team, and blue-team materials with team-colored buttons.
 - Rotation, panning, zoom, animation and voice-line previews.
 - Voice-pack selection synchronized with UT2004 Player Settings, plus a Default button.
 - Apply a character and voice together; the character appears on your next respawn.
@@ -31,11 +35,11 @@ You can also open it through **Configure Mutators** without enabling it for a ma
 
 ## Compatibility and limitations
 
-Version 1.2 was tested with native OldUnreal UT2004 build 3374 in Instant Action, listen-server, and separate dedicated-server/client sessions. Classic retail 3369 is expected to work but was not officially tested for this release.
+Version 1.3 was tested with native OldUnreal UT2004 build 3374 in Instant Action and with automated native checks of the menu adapters and interface at 1920x1080, 2560x1440, and 3840x2160. Its network Apply path is unchanged from 1.2, which was tested in listen-server and separate dedicated-server/client sessions. Classic retail 3369 is expected to work but was not officially tested for this release.
 
 Online servers must install the package and enable the mutator; installing it only on a client does not add the tab to arbitrary servers. Remote servers retain the stock ten-second character-change cooldown; in network play Apply shows a clear request message and a countdown.
 
-Custom replacement ESC menus keep their existing interface; use the console fallback when the mutator is active. Incomplete character packs can have missing previews or voice lines. Advanced filters beyond search, sorting, grouping, and Favorites are not included yet.
+Custom replacement ESC menus keep their existing interface; use the console fallback when the mutator is active. Incomplete character packs can have missing previews or voice lines. Advanced filters beyond search, sorting, grouping, Favorites, and Recent are not included yet. The first broken-skin check loads every character model once, which can cause a brief pause.
 
 See [the player README](release/README.txt) for full usage and uninstall instructions and [the changelog](CHANGELOG.md) for release history.
 
@@ -58,7 +62,7 @@ On Windows, with PowerShell:
 .\build.ps1 -GameDir 'C:\path\to\OldUnreal\UT2004' -ConfigDir 'C:\path\to\writable\System'
 ```
 
-Both entry points compile and round-trip export the classes, then create `dist/BetterSkinBrowser-v1.2.zip` and checksums. Rebuilt packages may differ from the published ZIP because Unreal packages and ZIPs can contain build-specific metadata. Use the published asset for the exact GameBanana release.
+Both entry points compile and round-trip export the classes, then create `dist/BetterSkinBrowser-v1.3.zip` and checksums. Rebuilt packages may differ from the published ZIP because Unreal packages and ZIPs can contain build-specific metadata. Use the published asset for the exact release.
 
 ## Bugs and contributions
 

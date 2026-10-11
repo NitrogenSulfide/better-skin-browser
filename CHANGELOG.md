@@ -1,3 +1,25 @@
+# Unreal Skin Browser 1.3
+
+- Keyboard navigation: Search is focused when the browser opens. Up/Down and
+  Page Up/Down browse skins from Search or the list, Home/End jump to the first
+  or last skin, and category headings are skipped. Enter moves from Search to
+  the list or grid. Ctrl+Enter applies, Ctrl+D toggles the favorite, and Ctrl+F
+  returns to Search.
+- Added a Shortcuts button and keyboard shortcuts window.
+- Added a Recent view of the last twelve skins you equipped, newest first.
+  Sort and Group are disabled there.
+- Added a portrait Grid layout with names, favorite stars, and equipped and
+  preview frames. With grouping on, each category starts its own row under a
+  gold heading. The choice is remembered and shared with the in-match tab.
+- Added Hide broken skins, on by default, for installed skins whose model
+  cannot be loaded. The result count shows how many are hidden, and the
+  equipped skin always stays listed.
+- Added a dice button that previews a random skin from the current view.
+- Red and Blue preview buttons now use team colors, Credits is gold, the search
+  x button lines up with the search field, and the preview controls have more
+  room.
+- Fixed the list scrollbar grip not dragging right after switching views.
+
 # Unreal Skin Browser 1.2
 
 Better Skin Browser is now Unreal Skin Browser. Package, class, favorites, and
