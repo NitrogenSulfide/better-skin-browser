@@ -1,3 +1,8 @@
+# Unreal Skin Browser 1.4
+
+- Fixed a faint ghost copy of the preview character, and its held weapon,
+  showing through translucent parts of the browser outside the preview window.
+
 # Unreal Skin Browser 1.3
 
 - Keyboard navigation: Search is focused when the browser opens. Up/Down and

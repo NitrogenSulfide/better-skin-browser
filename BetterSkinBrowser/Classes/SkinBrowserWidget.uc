@@ -424,6 +424,7 @@ function InitializeBrowser()
     {
         PreviewActor.SetDrawType(DT_Mesh);
         PreviewActor.SetDrawScale(0.9);
+        HideFromWorldView(PreviewActor);
         PreviewActor.SpinRate = 1800;
         // Keep the actor hidden until its owning page or tab is visibly open.
         // DrawActorClipped is deferred by some renderers, so visibility must
@@ -2240,6 +2241,7 @@ function AttachShockRifle()
         return;
     }
 
+    HideFromWorldView(WeaponPreview);
     if (!PreviewActor.AttachToBone(WeaponPreview, 'righthand'))
     {
         WeaponPreview.Destroy();
@@ -2257,6 +2259,15 @@ function AttachShockRifle()
 
     PreviewActor.PlayReturnAnimation('Idle_Rifle');
     SetPreviewMessage("");
+}
+
+// The preview sits in front of the player's camera, so the level render would
+// also draw it behind translucent menus. An unowned bOnlyOwnerSee actor is never
+// owned by the world view target; DrawActorClipped renders it directly.
+function HideFromWorldView(Actor A)
+{
+    A.SetOwner(None);
+    A.bOnlyOwnerSee = True;
 }
 
 function DestroyWeaponPreview()
