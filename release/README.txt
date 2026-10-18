@@ -1,4 +1,4 @@
-UNREAL SKIN BROWSER 1.4
+UNREAL SKIN BROWSER 1.5
 =======================
 
 Unreal Skin Browser adds a searchable Skins tab to supported UT2004 in-match
@@ -28,6 +28,8 @@ FEATURES
 - A gold Unreal Skin Browser title centered under the menu caption
 - A gold Credits button with a small credits window
 - Interactive 3D model and portrait previews
+- Characters that ship their own skin code preview the way they look in a
+  match: in-game materials and shine, team colors, cloth motion, and effects
 - Normal, red-team, and blue-team material previews with team-colored buttons
 - Mouse rotation, panning, zoom, reset, and automatic rotation
 - A voice-pack selector synchronized with UT2004 Player Settings
@@ -127,6 +129,9 @@ KNOWN LIMITATIONS
 - A missing or incomplete custom character may have unavailable preview
   materials, animations, or voice lines.
 - Advanced filters beyond search, sorting, grouping, and Favorites are deferred.
+- Instant Action pauses while the ESC menu is open. A custom character's
+  effects animate in that preview only if its own code keeps them running
+  during a pause.
 
 UNINSTALLATION
 --------------
@@ -147,7 +152,7 @@ mod. The compiled .u file is the version UT2004 loads.
 GitHub automatically offers "Source code (zip)" and "Source code (tar.gz)"
 downloads. Those are repository snapshots for developers who want to read or
 build the code. Regular players should download the separately attached
-BetterSkinBrowser-v1.4.zip release.
+BetterSkinBrowser-v1.5.zip release.
 
 COPYRIGHT AND LICENSE
 ---------------------
@@ -167,6 +172,12 @@ affiliated with or endorsed by Epic Games or OldUnreal.
 
 VERSION HISTORY
 ---------------
+
+1.5
+- Characters that ship their own skin code now preview with their in-game
+  materials, team colors, cloth motion, and effects, including on the Red and
+  Blue buttons.
+- Fixed the preview model tipping over when looking up or down in a match.
 
 1.4
 - Fixed a faint ghost copy of the preview character showing through

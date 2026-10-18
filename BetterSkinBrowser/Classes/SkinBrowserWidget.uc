@@ -58,6 +58,8 @@ var array<string> GridRowTitles;
 var int HiddenBrokenCount;
 var bool bUpdatingControls;
 var SkinPreviewActor PreviewActor;
+var SkinPreviewPawn PreviewPawn;
+var float PreviewEffectScanTime;
 var Actor WeaponPreview;
 var vector PreviewOffset;
 var int PreviewFOV;
@@ -1580,6 +1582,7 @@ function UpdateSelection()
 function ClearPreview()
 {
     DestroyWeaponPreview();
+    DestroyPreviewPawn();
     if (PreviewActor != None)
     {
         PreviewActor.LinkMesh(None);
@@ -1660,6 +1663,7 @@ function LoadPreview(xUtil.PlayerRecord Rec, optional bool bResetView)
         PreviewActor.Skins[1] = FaceSkin;
     else
         PreviewActor.Skins[1] = BodySkin;
+    LoadSpeciesPreview(Rec);
     if (!PreviewActor.PlayReturnAnimation('Idle_Rest'))
         PreviewMessage = "Idle_Rest animation unavailable.";
 
@@ -1675,6 +1679,122 @@ function LoadPreview(xUtil.PlayerRecord Rec, optional bool bResetView)
     if (WeaponCheck.IsChecked())
         AttachShockRifle();
     SetPreviewMessage(PreviewMessage);
+}
+
+// Characters with their own species class (anything outside XGame) preview
+// as they look in a match: a SkinPreviewPawn runs the species' Setup and
+// SetTeamSkin for the selected team, which applies the in-game skins and
+// shaders and starts its client-side effects (cloth, flames). The pawn is lit
+// like a player and mirrors PreviewActor's transform and animation. Stock
+// species, and any record whose setup fails, keep the plain preview.
+function bool UsesSpeciesPreview(xUtil.PlayerRecord Rec)
+{
+    return (Rec.Species != None) && !(Left(string(Rec.Species), 6) ~= "XGame.");
+}
+
+function LoadSpeciesPreview(xUtil.PlayerRecord Rec)
+{
+    local int Team;
+
+    if (!UsesSpeciesPreview(Rec))
+        return;
+    PreviewPawn = PlayerOwner().Spawn(class'BetterSkinBrowser.SkinPreviewPawn',,,
+        PreviewActor.Location, PreviewActor.Rotation);
+    if (PreviewPawn == None)
+        return;
+    HideFromWorldView(PreviewPawn);
+    // As xPawn.Setup, but keep the species' result: a failed setup falls back
+    // to the plain preview. Like the plain preview, this ignores the "force
+    // default characters" option, which applies to other players in a match.
+    PreviewPawn.Species = Rec.Species;
+    PreviewPawn.RagdollOverride = Rec.Ragdoll;
+    if (!Rec.Species.static.Setup(PreviewPawn, Rec) || PreviewPawn.bDeleteMe ||
+        (PreviewPawn.Mesh != PreviewActor.Mesh))
+    {
+        DestroyPreviewPawn();
+        return;
+    }
+    // Setup chose no team (the pawn has no replication info); apply the
+    // browser's red, blue or normal selection the way a team change does.
+    Team = 255;
+    if (PreviewTeam == 0 || PreviewTeam == 1)
+        Team = PreviewTeam;
+    PreviewPawn.Species.static.SetTeamSkin(PreviewPawn, Rec, Team);
+    // Unlit like the plain preview: the in-game skins and shaders give the
+    // in-game look, without changing with the match lights in front of the
+    // player's camera.
+    PreviewPawn.bUnlit = PreviewActor.bUnlit;
+    PreviewPawn.SetDrawScale(PreviewActor.DrawScale);
+    PreviewPawn.LODBias = PreviewActor.LODBias;
+    PreviewPawn.bHidden = PreviewActor.bHidden;
+    HidePreviewEffects();
+    PreviewActor.Mirror = PreviewPawn;
+}
+
+// Spawned for, attached to, or owned through another actor by the preview
+// pawn (effects of effects included).
+function bool IsPreviewEffect(Actor A)
+{
+    local Actor Link;
+    local int Depth;
+
+    if ((PreviewPawn == None) || (A == PreviewPawn) || (A == WeaponPreview))
+        return False;
+    for (Link = A; (Link != None) && (Depth < 8); Link = Link.Owner)
+    {
+        if ((Link.Owner == PreviewPawn) || (Link.Base == PreviewPawn))
+            return True;
+        Depth++;
+    }
+    for (Link = A.Base; (Link != None) && (Depth < 16); Link = Link.Base)
+    {
+        if (Link == PreviewPawn)
+            return True;
+        Depth++;
+    }
+    return False;
+}
+
+// Effect actors stay out of the level render (attached ones still draw with
+// the pawn through DrawActorClipped). DrawPreview repeats this every frame for
+// attachments and once a second for everything, for effects a species
+// spawns after setup.
+function HidePreviewEffects()
+{
+    local Actor A;
+
+    if (PreviewPawn == None)
+        return;
+    foreach PlayerOwner().DynamicActors(class'Actor', A)
+        if (IsPreviewEffect(A))
+            A.bOnlyOwnerSee = True;
+    PreviewEffectScanTime = PlayerOwner().Level.TimeSeconds;
+}
+
+function DestroyPreviewPawn()
+{
+    local Actor A;
+
+    if (PreviewActor != None)
+        PreviewActor.Mirror = None;
+    if (PreviewPawn == None)
+        return;
+    if (!PreviewPawn.bDeleteMe)
+    {
+        foreach PlayerOwner().DynamicActors(class'Actor', A)
+            if (IsPreviewEffect(A))
+                A.Destroy();
+        PreviewPawn.Destroy();
+    }
+    PreviewPawn = None;
+}
+
+// The actor drawn and holding the weapon: the species pawn when there is one.
+function Actor PreviewModel()
+{
+    if ((PreviewPawn != None) && !PreviewPawn.bDeleteMe)
+        return PreviewPawn;
+    return PreviewActor;
 }
 
 function SetPreviewMessage(string Message)
@@ -2242,7 +2362,7 @@ function AttachShockRifle()
     }
 
     HideFromWorldView(WeaponPreview);
-    if (!PreviewActor.AttachToBone(WeaponPreview, 'righthand'))
+    if (!PreviewModel().AttachToBone(WeaponPreview, 'righthand'))
     {
         WeaponPreview.Destroy();
         WeaponPreview = None;
@@ -2274,8 +2394,8 @@ function DestroyWeaponPreview()
 {
     if (WeaponPreview != None)
     {
-        if (PreviewActor != None)
-            PreviewActor.DetachFromBone(WeaponPreview);
+        if (PreviewModel() != None)
+            PreviewModel().DetachFromBone(WeaponPreview);
         WeaponPreview.Destroy();
     }
     WeaponPreview = None;
@@ -2303,6 +2423,8 @@ function SetPreviewActorsHidden(bool bHide)
 {
     if (PreviewActor != None)
         PreviewActor.bHidden = bHide;
+    if (PreviewPawn != None)
+        PreviewPawn.bHidden = bHide;
     if (WeaponPreview != None)
         WeaponPreview.bHidden = bHide;
 }
@@ -2464,10 +2586,10 @@ function bool PreviewCapturedMouseMove(float DeltaX, float DeltaY)
     }
 
     bViewportPanning = False;
-    R = PreviewActor.Rotation;
+    R = PreviewActor.PreviewRotation;
     R.Yaw -= 256 * DeltaX;
     R.Pitch = Clamp(R.Pitch - (128 * DeltaY), -12000, 12000);
-    PreviewActor.SetRotation(R);
+    PreviewActor.PreviewRotation = R;
     return True;
 }
 
@@ -2492,8 +2614,9 @@ function bool ResetPreviewView(GUIComponent Sender)
 
 function bool DrawPreview(Canvas C)
 {
+    local int i;
     local vector CamPos, X, Y, Z;
-    local rotator CamRot, PreviewRot;
+    local rotator CamRot;
     local float Left, Top, Width, Height;
     local float OldOrgX, OldOrgY, OldClipX, OldClipY;
     local byte OldStyle;
@@ -2531,12 +2654,13 @@ function bool DrawPreview(Canvas C)
         GetAxes(CamRot, X, Y, Z);
         if (bAlignPreviewToCamera)
         {
-            PreviewRot.Yaw = CamRot.Yaw + 32768;
-            PreviewActor.SetRotation(PreviewRot);
+            PreviewActor.PreviewRotation = rot(0, 32768, 0);
             bAlignPreviewToCamera = False;
         }
         PreviewActor.SetLocation(CamPos + (PreviewOffset.X * X) +
             (PreviewOffset.Y * Y) + (PreviewOffset.Z * Z));
+        PreviewActor.SetRotation(class'SkinPreviewActor'.static.ViewRotation(
+            PreviewActor.PreviewRotation, CamRot));
 
         // Match the stock player-settings renderer: constrain the canvas as
         // well as DrawActorClipped so attached weapon geometry cannot paint
@@ -2549,7 +2673,19 @@ function bool DrawPreview(Canvas C)
         C.OrgY = Top;
         C.ClipX = Width;
         C.ClipY = Height;
-        C.DrawActorClipped(PreviewActor, False, Left + 2, Top + 2,
+        if (PreviewPawn != None)
+        {
+            PreviewPawn.SetLocation(PreviewActor.Location);
+            PreviewPawn.SetRotation(PreviewActor.Rotation);
+            // Species effect drivers sleep while their pawn is off screen.
+            PreviewPawn.LastRenderTime = PreviewPawn.Level.TimeSeconds;
+            for (i = 0; i < PreviewPawn.Attached.Length; i++)
+                if ((PreviewPawn.Attached[i] != None) && (PreviewPawn.Attached[i] != WeaponPreview))
+                    PreviewPawn.Attached[i].bOnlyOwnerSee = True;
+            if (PreviewPawn.Level.TimeSeconds - PreviewEffectScanTime >= 1.0)
+                HidePreviewEffects();
+        }
+        C.DrawActorClipped(PreviewModel(), False, Left + 2, Top + 2,
             Width - 4, Height - 4, True, PreviewFOV);
         C.OrgX = OldOrgX;
         C.OrgY = OldOrgY;
@@ -2912,6 +3048,7 @@ function bool CloseClicked(GUIComponent Sender)
 function Free()
 {
     DestroyWeaponPreview();
+    DestroyPreviewPawn();
     if (PreviewActor != None)
         PreviewActor.Destroy();
     PreviewActor = None;

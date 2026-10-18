@@ -1,3 +1,16 @@
+# Unreal Skin Browser 1.5
+
+- Characters that ship their own species code (custom shaders, team colors,
+  cloth or particle effects) now preview with their in-game look: a hidden
+  preview pawn runs the character's own skin setup for the selected team, and
+  its effects are removed when the selection changes or the browser closes.
+  Stock characters, and records whose setup fails, keep the plain preview.
+- The Red and Blue buttons show those characters' in-game team colors.
+- The preview is drawn unlit for every character, so it looks the same
+  wherever the player stands in a match.
+- Fixed the preview model tipping over when the player looked up or down; it
+  now stays upright relative to the camera.
+
 # Unreal Skin Browser 1.4
 
 - Fixed a faint ghost copy of the preview character, and its held weapon,

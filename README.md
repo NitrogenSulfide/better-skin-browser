@@ -4,9 +4,9 @@ Formerly **Better Skin Browser**. Search, favorite, preview, and select your ins
 
 Created by **Blue Natto**, known as **CissiaLikesEggs** on GameBanana. Published on GitHub under **NitrogenSulfide**.
 
-**[Download v1.4](https://github.com/NitrogenSulfide/unreal-skin-browser/releases/tag/v1.4)** | **[GameBanana page and screenshots](https://gamebanana.com/mods/714077)** | **[Report a bug](https://github.com/NitrogenSulfide/unreal-skin-browser/issues)**
+**[Download v1.5](https://github.com/NitrogenSulfide/unreal-skin-browser/releases/tag/v1.5)** | **[GameBanana page and screenshots](https://gamebanana.com/mods/714077)** | **[Report a bug](https://github.com/NitrogenSulfide/unreal-skin-browser/issues)**
 
-Players should download `BetterSkinBrowser-v1.4.zip` from the release assets. It is the same file as the download on [GameBanana](https://gamebanana.com/mods/714077). GitHub's automatic source archives are for developers.
+Players should download `BetterSkinBrowser-v1.5.zip` from the release assets. It is the same file as the download on [GameBanana](https://gamebanana.com/mods/714077). GitHub's automatic source archives are for developers.
 
 ## Features
 
@@ -35,7 +35,7 @@ You can also open it through **Configure Mutators** without enabling it for a ma
 
 ## Compatibility and limitations
 
-Version 1.4 was tested with native OldUnreal UT2004 build 3374 in Instant Action and with automated native checks of the menu adapters and interface at 1920x1080, 2560x1440, and 3840x2160. Its network Apply path is unchanged from 1.2, which was tested in listen-server and separate dedicated-server/client sessions. Classic retail 3369 is expected to work but was not officially tested for this release.
+Version 1.5 was tested with native OldUnreal UT2004 build 3374 in Instant Action, with automated native interface checks at 3840x2160, and with automated custom-character preview checks at 1920x1080 and 2560x1440. Its network Apply path is unchanged from 1.2, which was tested in listen-server and separate dedicated-server/client sessions. Classic retail 3369 is expected to work but was not officially tested for this release.
 
 Online servers must install the package and enable the mutator; installing it only on a client does not add the tab to arbitrary servers. Remote servers retain the stock ten-second character-change cooldown; in network play Apply shows a clear request message and a countdown.
 
@@ -62,7 +62,7 @@ On Windows, with PowerShell:
 .\build.ps1 -GameDir 'C:\path\to\OldUnreal\UT2004' -ConfigDir 'C:\path\to\writable\System'
 ```
 
-Both entry points compile and round-trip export the classes, then create `dist/BetterSkinBrowser-v1.4.zip` and checksums. Rebuilt packages may differ from the published ZIP because Unreal packages and ZIPs can contain build-specific metadata. Use the published asset for the exact GitHub and GameBanana release.
+Both entry points compile and round-trip export the classes, then create `dist/BetterSkinBrowser-v1.5.zip` and checksums. Rebuilt packages may differ from the published ZIP because Unreal packages and ZIPs can contain build-specific metadata. Use the published asset for the exact GitHub and GameBanana release.
 
 ## Bugs and contributions
 
