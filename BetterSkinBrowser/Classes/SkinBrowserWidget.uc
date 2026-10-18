@@ -2442,7 +2442,7 @@ function bool PreviewKeyEvent(out byte Key, out byte State, float Delta)
     }
     if ((InputKey == IK_MouseWheelDown) && (EInputAction(State) == IST_Release))
     {
-        PreviewOffset.X = FMin(500.0, PreviewOffset.X + 18.0);
+        PreviewOffset.X = FMin(720.0, PreviewOffset.X + 18.0);
         MarkViewportInput();
         return True;
     }
@@ -2604,7 +2604,9 @@ function PreviewMouseReleased(GUIComponent Sender)
 
 function bool ResetPreviewView(GUIComponent Sender)
 {
-    PreviewOffset = vect(500.0, 1.0, -14.0);
+    // Far enough back that tall skins keep their heads in the pane, with
+    // room to zoom out further.
+    PreviewOffset = vect(600.0, 1.0, -14.0);
     // Resolve the actual camera-relative front direction in DrawPreview.
     // Absolute world yaw is wrong whenever the match camera faces elsewhere.
     bAlignPreviewToCamera = True;

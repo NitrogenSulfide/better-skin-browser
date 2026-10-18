@@ -1,5 +1,5 @@
-UNREAL SKIN BROWSER 1.5
-=======================
+UNREAL SKIN BROWSER 1.5.1
+=========================
 
 Unreal Skin Browser adds a searchable Skins tab to supported UT2004 in-match
 ESC menus. It browses the same installed character records used by UT2004's
@@ -152,7 +152,7 @@ mod. The compiled .u file is the version UT2004 loads.
 GitHub automatically offers "Source code (zip)" and "Source code (tar.gz)"
 downloads. Those are repository snapshots for developers who want to read or
 build the code. Regular players should download the separately attached
-BetterSkinBrowser-v1.5.zip release.
+BetterSkinBrowser-v1.5.1.zip release.
 
 COPYRIGHT AND LICENSE
 ---------------------
@@ -172,6 +172,11 @@ affiliated with or endorsed by Epic Games or OldUnreal.
 
 VERSION HISTORY
 ---------------
+
+1.5.1
+- Fixed the default preview being zoomed in too far, which cut off the tops
+  of heads and some taller characters. The preview now starts farther back,
+  and the mouse wheel can zoom out further.
 
 1.5
 - Characters that ship their own skin code now preview with their in-game

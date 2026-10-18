@@ -1,3 +1,9 @@
+# Unreal Skin Browser 1.5.1
+
+- Fixed the default preview being zoomed in too far, which cut off the tops of
+  heads and some taller characters. The default distance goes from 500 to 600
+  units, and the mouse wheel can now zoom out to 720.
+
 # Unreal Skin Browser 1.5
 
 - Characters that ship their own species code (custom shaders, team colors,

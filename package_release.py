@@ -11,7 +11,7 @@ import zipfile
 PROJECT = Path(__file__).resolve().parent
 DIST = PROJECT / "dist"
 SYSTEM = DIST / "System"
-ARCHIVE = DIST / "BetterSkinBrowser-v1.5.zip"
+ARCHIVE = DIST / "BetterSkinBrowser-v1.5.1.zip"
 CHECKSUMS = DIST / "SHA256SUMS.txt"
 
 
