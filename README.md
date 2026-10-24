@@ -4,12 +4,13 @@ Formerly **Better Skin Browser**. Search, favorite, preview, and select your ins
 
 Created by **Blue Natto**, known as **CissiaLikesEggs** on GameBanana. Published on GitHub under **NitrogenSulfide**.
 
-**[Download v1.5.1](https://github.com/NitrogenSulfide/unreal-skin-browser/releases/tag/v1.5.1)** | **[GameBanana page and screenshots](https://gamebanana.com/mods/714077)** | **[Report a bug](https://github.com/NitrogenSulfide/unreal-skin-browser/issues)**
+**[Download v1.6](https://github.com/NitrogenSulfide/unreal-skin-browser/releases/tag/v1.6)** | **[GameBanana page and screenshots](https://gamebanana.com/mods/714077)** | **[Report a bug](https://github.com/NitrogenSulfide/unreal-skin-browser/issues)**
 
-Players should download `BetterSkinBrowser-v1.5.1.zip` from the release assets. It is the same file as the download on [GameBanana](https://gamebanana.com/mods/714077). GitHub's automatic source archives are for developers.
+Players should download `BetterSkinBrowser-v1.6.zip` from the release assets. It is the same file as the download on [GameBanana](https://gamebanana.com/mods/714077). GitHub's automatic source archives are for developers.
 
 ## Features
 
+- List and preview panels framed with the game's own menu border, with icons on the All skins, Favorites, and Recent buttons.
 - Search with any words in any order across name, race, sex, mesh, and skin texture package, with a one-click clear button.
 - Keyboard navigation: Search is ready when the browser opens, arrows and paging browse skins, and Ctrl+Enter, Ctrl+D, and Ctrl+F apply, favorite, and return to Search. A Shortcuts button lists them.
 - Favorites, Recent (the last twelve skins you equipped), and All skins views, saved locally and shared between the menu and the in-match tab.
@@ -18,9 +19,10 @@ Players should download `BetterSkinBrowser-v1.5.1.zip` from the release assets. 
 - A dice button previews a random skin from the current view.
 - Sorting, plus grouping by race or family/package with gold category headings.
 - Interactive 3D and portrait previews, including normal, red-team, and blue-team materials with team-colored buttons.
-- Rotation, panning, zoom, animation and voice-line previews.
+- Rotation, panning, zoom, optional auto-rotation (off until turned on, then remembered), animation and voice-line previews.
 - Voice-pack selection synchronized with UT2004 Player Settings, plus a Default button.
-- Apply a character and voice together; the character appears on your next respawn.
+- Apply a character and voice together; the character appears on your next respawn. Optional **Respawn on Apply** (off by default) respawns you right away instead, skipped while carrying a flag, driving, spectating, or in modes with limited lives.
+- Sounds for adding and removing a favorite.
 - Layout designed for 1920x1080 through 3840x2160, with a Credits window.
 
 No character packs are included. Custom skins and voices must be installed separately.
@@ -35,7 +37,7 @@ You can also open it through **Configure Mutators** without enabling it for a ma
 
 ## Compatibility and limitations
 
-Version 1.5.1 was tested with native OldUnreal UT2004 build 3374 in Instant Action, with automated native interface checks at 3840x2160, and with automated custom-character preview checks at 1920x1080. Its network Apply path is unchanged from 1.2, which was tested in listen-server and separate dedicated-server/client sessions. Classic retail 3369 is expected to work but was not officially tested for this release.
+Version 1.6 was tested with native OldUnreal UT2004 build 3374 in Instant Action, including Respawn on Apply, and with automated native interface checks at 1920x1080 on Windows. Respawn on Apply has not been tested online yet. The network Apply path is otherwise unchanged from 1.2, which was tested in listen-server and separate dedicated-server/client sessions. Classic retail 3369 is expected to work but was not officially tested for this release.
 
 Online servers must install the package and enable the mutator; installing it only on a client does not add the tab to arbitrary servers. Remote servers retain the stock ten-second character-change cooldown; in network play Apply shows a clear request message and a countdown.
 
@@ -62,7 +64,7 @@ On Windows, with PowerShell:
 .\build.ps1 -GameDir 'C:\path\to\OldUnreal\UT2004' -ConfigDir 'C:\path\to\writable\System'
 ```
 
-Both entry points compile and round-trip export the classes, then create `dist/BetterSkinBrowser-v1.5.1.zip` and checksums. Rebuilt packages may differ from the published ZIP because Unreal packages and ZIPs can contain build-specific metadata. Use the published asset for the exact GitHub and GameBanana release.
+Both entry points compile and round-trip export the classes, then create `dist/BetterSkinBrowser-v1.6.zip` and checksums. Rebuilt packages may differ from the published ZIP because Unreal packages and ZIPs can contain build-specific metadata. Use the published asset for the exact GitHub and GameBanana release.
 
 ## Bugs and contributions
 

@@ -1,3 +1,22 @@
+# Unreal Skin Browser 1.6
+
+- The list and preview panels are framed with the game's own menu border
+  (the stock `2K4Menus` window panel, nine-sliced so its rim and bevelled
+  footer keep their shape) and centered in the window.
+- All skins, Favorites, and Recent have drawn icons: a tile grid, amber stars,
+  and a rewind clock. When large menu fonts leave too little room, all three
+  buttons use the small font.
+- Credits is a muted bronze button with cream text.
+- Adding a favorite plays a chime and removing one a lower tone.
+- Auto rotate is off until turned on, and the choice is saved and shared with
+  the in-match Skins tab. It was always on before.
+- Added Respawn on Apply under Apply, off by default. It respawns the player
+  right after Apply so the new skin shows at once, and is skipped while
+  carrying a flag, driving, spectating, or in modes with limited lives. Online
+  it waits for the server to echo the new character before respawning.
+  Tested in Instant Action only.
+- Servers and players must run the same version.
+
 # Unreal Skin Browser 1.5.1
 
 - Fixed the default preview being zoomed in too far, which cut off the tops of

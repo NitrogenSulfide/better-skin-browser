@@ -1,5 +1,5 @@
-UNREAL SKIN BROWSER 1.5.1
-=========================
+UNREAL SKIN BROWSER 1.6
+=======================
 
 Unreal Skin Browser adds a searchable Skins tab to supported UT2004 in-match
 ESC menus. It browses the same installed character records used by UT2004's
@@ -11,6 +11,11 @@ name, so existing favorites and server mutator settings keep working.
 FEATURES
 --------
 
+- List and preview panels framed with the game's own menu border, centered
+  in the window
+- Icons on the All skins, Favorites, and Recent buttons
+- A chime when you add a favorite and a lower tone when you remove one
+- Optional Respawn on Apply, so a new skin shows right away
 - Keyboard navigation: Search is ready on open, arrows and paging browse skins,
   and Ctrl+Enter, Ctrl+D, and Ctrl+F apply, favorite, and return to Search
 - A Shortcuts button with a keyboard shortcuts window
@@ -26,12 +31,12 @@ FEATURES
 - Sorting and grouping by name, race, family/package, or sex, with centered
   gold category headings
 - A gold Unreal Skin Browser title centered under the menu caption
-- A gold Credits button with a small credits window
+- A bronze Credits button with a small credits window
 - Interactive 3D model and portrait previews
 - Characters that ship their own skin code preview the way they look in a
   match: in-game materials and shine, team colors, cloth motion, and effects
 - Normal, red-team, and blue-team material previews with team-colored buttons
-- Mouse rotation, panning, zoom, reset, and automatic rotation
+- Mouse rotation, panning, zoom, reset, and optional automatic rotation
 - A voice-pack selector synchronized with UT2004 Player Settings
 - A one-click Default button for the selected character's assigned voice
 - Animation and selected-voice-line previews
@@ -46,6 +51,8 @@ REQUIREMENTS AND TESTED CONFIGURATION
 - Unreal Tournament 2004 build 3369, or OldUnreal UT2004 3374 or later
 - Officially tested with OldUnreal UT2004 3374
 - Tested in Instant Action, listen-server, and dedicated-server matches
+- Version 1.6 was tested in Instant Action. Respawn on Apply has not been
+  tested online yet.
 
 The classic retail 3369 build is expected to work, but it has not been
 officially tested for this release.
@@ -92,6 +99,8 @@ USAGE
 - Removing a visible favorite selects its next neighbor, or the previous one
   at the end. Favorites never equip a skin or change the player's voice.
 - Drag the model to rotate it.
+- Auto rotate turns the model slowly after a few seconds without input. It is
+  off until you turn it on, and your choice is remembered.
 - Hold Shift while dragging, or right-drag, to pan.
 - Use the mouse wheel to zoom.
 - Choose Character default to use the selected skin's assigned voice, or choose
@@ -99,7 +108,12 @@ USAGE
 - The Default button selects Character default without reopening the list.
 - Use Apply to save the selected character and chosen voice together.
 - Instant Action confirms "Skin active - respawn to apply" with the usual sound
-  and uses the character on the very next respawn. Apply does not force respawn.
+  and uses the character on the very next respawn.
+- Respawn on Apply (under Apply, off by default) respawns you right after
+  Apply so the new skin shows at once. It costs a point like any suicide, and
+  it is skipped while you carry a flag, drive a vehicle, spectate, or play a
+  mode with limited lives. Online it waits for the server to confirm the skin
+  change first, and does nothing if the server does not confirm it.
 - Network play shows "Change requested - respawn to apply". Apply is disabled
   during the known ten-second window and shows "Wait N s before changing skin".
   The server remains authoritative; the stock request has no acknowledgement.
@@ -112,6 +126,9 @@ Listen-server play has been tested. For a remote multiplayer server, the
 server must install this package and enable the Unreal Skin Browser mutator so
 clients can receive and use the matching menu classes. Installing the package
 only on a client does not add the Skins tab to arbitrary online servers.
+
+When a server updates to a new version, players need the same version, and
+the other way round: UT2004 refuses to join with a mismatched package.
 
 Version 1.0 was tested with a separate native dedicated server and client.
 UT2004's stock remote character-change cooldown still applies. Its server
@@ -152,7 +169,7 @@ mod. The compiled .u file is the version UT2004 loads.
 GitHub automatically offers "Source code (zip)" and "Source code (tar.gz)"
 downloads. Those are repository snapshots for developers who want to read or
 build the code. Regular players should download the separately attached
-BetterSkinBrowser-v1.5.1.zip release.
+BetterSkinBrowser-v1.6.zip release.
 
 COPYRIGHT AND LICENSE
 ---------------------
@@ -172,6 +189,16 @@ affiliated with or endorsed by Epic Games or OldUnreal.
 
 VERSION HISTORY
 ---------------
+
+1.6
+- Framed the list and preview panels with the game's own menu border and
+  centered them in the window.
+- Added icons to the All skins, Favorites, and Recent buttons.
+- Added sounds for adding and removing a favorite.
+- Added Respawn on Apply, off by default.
+- Auto rotate is now off by default and remembers your choice. It was always
+  on before, so turn it on once if you want it back.
+- Credits is now bronze instead of bright gold.
 
 1.5.1
 - Fixed the default preview being zoomed in too far, which cut off the tops

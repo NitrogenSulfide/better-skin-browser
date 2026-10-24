@@ -4,6 +4,9 @@ class SkinBrowserSettings extends Object config(BetterSkinBrowser);
 
 var config bool bGridView;
 var config bool bHideBrokenSkins;
+var config bool bRespawnOnApply;
+// Off unless the player turns it on; the choice is then remembered.
+var config bool bAutoRotate;
 var config array<string> LoadableMeshes;
 var config array<string> BrokenMeshes;
 
@@ -20,6 +23,22 @@ static function SetHideBrokenSkins(bool bHide)
     if (default.bHideBrokenSkins == bHide)
         return;
     default.bHideBrokenSkins = bHide;
+    StaticSaveConfig();
+}
+
+static function SetAutoRotate(bool bNewAutoRotate)
+{
+    if (default.bAutoRotate == bNewAutoRotate)
+        return;
+    default.bAutoRotate = bNewAutoRotate;
+    StaticSaveConfig();
+}
+
+static function SetRespawnOnApply(bool bRespawn)
+{
+    if (default.bRespawnOnApply == bRespawn)
+        return;
+    default.bRespawnOnApply = bRespawn;
     StaticSaveConfig();
 }
 

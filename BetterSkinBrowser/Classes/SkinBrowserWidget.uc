@@ -17,6 +17,7 @@ var automated GUIButton LayoutButton;
 var automated GUIButton RandomButton;
 var byte DiceFace;
 var automated moCheckBox HideBrokenCheck;
+var automated moCheckBox RespawnCheck;
 var automated GUIImage PreviewPane;
 var automated GUIImage PortraitPane;
 var automated GUIButton PreviewInput;
@@ -83,30 +84,64 @@ var bool bUseCharacterDefaultVoice;
 var bool bFavoritesOnly;
 var bool bRecentOnly;
 var float ApplyRequestMessageUntil;
+// The menu frame texture and its texels per screen pixel at 1080 rows.
+var Texture CardFrame;
+var float CardFrameScale;
 
-// Match Motorpool's slate-blue cards, using widget bounds so the same frame
-// follows both the floating browser and the in-match Skins tab.
+
+function DrawFrameSlice(Canvas C, float X, float Y, float W, float H, float U, float V, float UL, float VL)
+{
+    if (W <= 0 || H <= 0 || CardFrame == None)
+        return;
+    C.SetPos(X, Y);
+    C.DrawTile(CardFrame, W, H, U, V, UL, VL);
+}
+
+// Each card wears the menu's own frame: the 128x128 panel stretched around
+// every floating window. It is drawn nine-sliced at a fixed pixel scale so the
+// rim and bevelled footer keep their shape at any card size, and its inner
+// panel (texels 9-118 by 3-107, chamfered over the last eight rows) is
+// repainted in the slate card fill. Widget bounds keep the same frame in both
+// the floating browser and the in-match Skins tab.
 function DrawBrowserCard(Canvas C, float Left, float Top, float Width, float Height)
 {
-    Left = ActualLeft() + ActualWidth() * Left;
-    Top = ActualTop() + ActualHeight() * Top;
-    Width = ActualWidth() * Width;
-    Height = ActualHeight() * Height;
+    local float S, Corner, TopEdge, Footer, Inset, RowTop, RowBottom;
+    local int Row;
+
+    Left = Round(ActualLeft() + ActualWidth() * Left);
+    Top = Round(ActualTop() + ActualHeight() * Top);
+    Width = Round(ActualWidth() * Width);
+    Height = Round(ActualHeight() * Height);
+    S = FMax(1.0, CardFrameScale * Controller.ResY / 1080.0);
+    Corner = Round(26 * S);
+    TopEdge = Round(3 * S);
+    Footer = Round(28 * S);
+
+    C.Style = 5;
+    C.SetDrawColor(255, 255, 255, 255);
+    DrawFrameSlice(C, Left, Top, Corner, TopEdge, 0, 0, 26, 3);
+    DrawFrameSlice(C, Left + Corner, Top, Width - Corner * 2, TopEdge, 26, 0, 76, 3);
+    DrawFrameSlice(C, Left + Width - Corner, Top, Corner, TopEdge, 102, 0, 26, 3);
+    DrawFrameSlice(C, Left, Top + TopEdge, Corner, Height - TopEdge - Footer, 0, 3, 26, 97);
+    DrawFrameSlice(C, Left + Width - Corner, Top + TopEdge, Corner, Height - TopEdge - Footer,
+        102, 3, 26, 97);
+    DrawFrameSlice(C, Left, Top + Height - Footer, Corner, Footer, 0, 100, 26, 28);
+    DrawFrameSlice(C, Left + Corner, Top + Height - Footer, Width - Corner * 2, Footer, 26, 100, 76, 28);
+    DrawFrameSlice(C, Left + Width - Corner, Top + Height - Footer, Corner, Footer, 102, 100, 26, 28);
 
     C.Style = 1;
     C.SetDrawColor(30, 65, 125, 255);
-    C.SetPos(Left, Top);
-    C.DrawTile(Texture'Engine.WhiteSquareTexture', Width, Height, 0, 0, 2, 2);
-    C.Style = 5;
-    C.SetDrawColor(88, 152, 225, 210);
-    C.SetPos(Left, Top);
-    C.DrawTile(Texture'Engine.WhiteSquareTexture', Width, 1, 0, 0, 2, 2);
-    C.SetPos(Left, Top + Height - 1);
-    C.DrawTile(Texture'Engine.WhiteSquareTexture', Width, 1, 0, 0, 2, 2);
-    C.SetPos(Left, Top);
-    C.DrawTile(Texture'Engine.WhiteSquareTexture', 1, Height, 0, 0, 2, 2);
-    C.SetPos(Left + Width - 1, Top);
-    C.DrawTile(Texture'Engine.WhiteSquareTexture', 1, Height, 0, 0, 2, 2);
+    Inset = Round(9 * S);
+    C.SetPos(Left + Inset, Top + TopEdge);
+    C.DrawTile(Texture'Engine.WhiteSquareTexture', Width - Inset * 2, Height - TopEdge - Footer, 0, 0, 2, 2);
+    for (Row = 100; Row < 108; Row++)
+    {
+        RowTop = Top + Height - Footer + Round((Row - 100) * S);
+        RowBottom = Top + Height - Footer + Round((Row - 99) * S);
+        Inset = Round((Row - 90) * S);
+        C.SetPos(Left + Inset, RowTop);
+        C.DrawTile(Texture'Engine.WhiteSquareTexture', Width - Inset * 2, RowBottom - RowTop, 0, 0, 2, 2);
+    }
 }
 
 // Give the x button exactly the search field's height and vertical position.
@@ -125,6 +160,26 @@ function AlignRandomButton()
     RandomButton.WinWidth = Side;
     RandomButton.WinLeft = LayoutButton.WinLeft - Gap - Side;
     ResultLabel.WinWidth = FMax(0.05, RandomButton.WinLeft - Gap - ResultLabel.WinLeft);
+}
+
+// The floating window also shows Close: narrow the favorite and Apply buttons
+// so all three stay under the preview card.
+function AlignActionButtons()
+{
+    if (CloseButton.bVisible)
+    {
+        FavoriteButton.WinWidth = 0.145;
+        ApplyButton.WinLeft = 0.708;
+        ApplyButton.WinWidth = 0.110;
+    }
+    else
+    {
+        FavoriteButton.WinWidth = 0.185;
+        ApplyButton.WinLeft = 0.755;
+        ApplyButton.WinWidth = 0.130;
+    }
+    // Respawn on Apply sits under Apply with matching right edges.
+    RespawnCheck.WinLeft = ApplyButton.WinLeft + ApplyButton.WinWidth - RespawnCheck.WinWidth;
 }
 
 function AlignClearButton()
@@ -150,10 +205,12 @@ function bool DrawBrowserCards(Canvas C)
     OldY = C.CurY;
     // Keep the result count with the filters/list and the help/status line
     // with the preview controls. Apply and Close remain outside the cards.
-    DrawBrowserCard(C, 0.040, 0.080, 0.400, 0.760);
-    DrawBrowserCard(C, 0.500, 0.080, 0.380, 0.760);
+    // The two cards are centred in the widget: 0.08 of margin on each side.
+    DrawBrowserCard(C, 0.080, 0.080, 0.400, 0.765);
+    DrawBrowserCard(C, 0.540, 0.080, 0.380, 0.765);
     AlignClearButton();
     AlignRandomButton();
+    AlignActionButtons();
     C.Style = OldStyle;
     C.DrawColor = OldColor;
     C.SetPos(OldX, OldY);
@@ -217,6 +274,176 @@ function DrawFavoritesViewMarker(Canvas C)
 function DrawRecentViewMarker(Canvas C)
 {
     DrawActiveViewMarker(C, RecentViewButton, bRecentOnly);
+}
+
+// Recent: a clock face whose ring opens below nine o'clock, with an arrowhead
+// at the open end pointing back (counter-clockwise), and hands at 12 and 3.
+function DrawRewindClock(Canvas C, float X, float Y, float Size)
+{
+    local float R, Inner, Thick, CX, CY, DY, OuterX, InnerX, Mid, Hand, ArrowTop, ArrowH, Half;
+    local int Row;
+
+    R = Size * 0.5;
+    Thick = FMax(1.5, Round(Size * 0.13));
+    Inner = R - Thick;
+    CX = X + R;
+    CY = Y + R;
+    for (Row = 0; Row < int(Size); Row++)
+    {
+        DY = Y + Row + 0.5 - CY;
+        if (Abs(DY) >= R)
+            continue;
+        OuterX = Sqrt(R * R - DY * DY);
+        if (Abs(DY) >= Inner)
+        {
+            C.SetPos(CX - OuterX, Y + Row);
+            C.DrawTile(Texture'Engine.WhiteSquareTexture', OuterX * 2, 1, 0, 0, 2, 2);
+            continue;
+        }
+        InnerX = Sqrt(Inner * Inner - DY * DY);
+        if (DY < R * 0.12 || DY > R * 0.68)
+        {
+            C.SetPos(CX - OuterX, Y + Row);
+            C.DrawTile(Texture'Engine.WhiteSquareTexture', OuterX - InnerX, 1, 0, 0, 2, 2);
+        }
+        C.SetPos(CX + InnerX, Y + Row);
+        C.DrawTile(Texture'Engine.WhiteSquareTexture', OuterX - InnerX, 1, 0, 0, 2, 2);
+    }
+    // Arrowhead pointing down from the ring's open end.
+    Mid = CX - (R + Inner) * 0.5;
+    ArrowTop = CY + R * 0.04;
+    ArrowH = Round(Size * 0.3);
+    for (Row = 0; Row < int(ArrowH); Row++)
+    {
+        Half = Thick * 1.25 * (1.0 - (Row + 0.5) / ArrowH);
+        C.SetPos(Mid - Half, ArrowTop + Row);
+        C.DrawTile(Texture'Engine.WhiteSquareTexture', Half * 2, 1, 0, 0, 2, 2);
+    }
+    Hand = FMax(1.0, Round(Thick * 0.8));
+    C.SetPos(Round(CX - Hand * 0.5), Round(CY - Inner * 0.75));
+    C.DrawTile(Texture'Engine.WhiteSquareTexture', Hand, Round(Inner * 0.75 + Hand * 0.5), 0, 0, 2, 2);
+    C.SetPos(Round(CX - Hand * 0.5), Round(CY - Hand * 0.5));
+    C.DrawTile(Texture'Engine.WhiteSquareTexture', Round(Inner * 0.55 + Hand * 0.5), Hand, 0, 0, 2, 2);
+}
+
+// All skins: a 2x2 grid of tiles.
+function DrawGridIcon(Canvas C, float X, float Y, float Size)
+{
+    local float Cell, Gap;
+
+    Gap = FMax(1.0, Round(Size * 0.14));
+    Cell = Round((Size - Gap) * 0.5);
+    C.SetPos(X, Y);
+    C.DrawTile(Texture'Engine.WhiteSquareTexture', Cell, Cell, 0, 0, 2, 2);
+    C.SetPos(X + Cell + Gap, Y);
+    C.DrawTile(Texture'Engine.WhiteSquareTexture', Cell, Cell, 0, 0, 2, 2);
+    C.SetPos(X, Y + Cell + Gap);
+    C.DrawTile(Texture'Engine.WhiteSquareTexture', Cell, Cell, 0, 0, 2, 2);
+    C.SetPos(X + Cell + Gap, Y + Cell + Gap);
+    C.DrawTile(Texture'Engine.WhiteSquareTexture', Cell, Cell, 0, 0, 2, 2);
+}
+
+// Amber star with a thin dark-brown outline so it reads on the blue button.
+function DrawAmberStar(Canvas C, float X, float Y, float Size)
+{
+    local float Edge;
+
+    Edge = FMax(1.0, Round(Size * 0.08));
+    C.SetDrawColor(70, 40, 4, 255);
+    FillStar(C, X - Edge, Y - Edge, Size + Edge * 2);
+    C.SetDrawColor(255, 184, 28, 255);
+    FillStar(C, X, Y, Size);
+}
+
+// Width of a view button's caption plus its icons, at the given font.
+function float ViewButtonContentWidth(Canvas C, GUIButton Button, byte Icon, GUIComponent.eFontScale Scale,
+    out float XL, out float YL, out float Size, out float Gap)
+{
+    Button.Style.TextSize(C, Button.MenuState, Button.Caption, XL, YL, Scale);
+    Size = Round(FClamp(YL * 0.85, 6, Button.ActualHeight() * 0.6));
+    Gap = Round(Size * 0.45);
+    if (Icon == 1)
+        return XL + (Size + Gap) * 2;
+    return XL + Size + Gap;
+}
+
+// The three view buttons share one font: their own, or the small one when
+// any caption and its icons would not fit (large menu fonts at 1080p).
+function GUIComponent.eFontScale ViewButtonFont(Canvas C)
+{
+    local float XL, YL, Size, Gap;
+
+    if ((AllSkinsButton.Style != None && ViewButtonContentWidth(C, AllSkinsButton, 0, AllSkinsButton.FontScale,
+            XL, YL, Size, Gap) > AllSkinsButton.ActualWidth() - Size) ||
+        (FavoritesViewButton.Style != None && ViewButtonContentWidth(C, FavoritesViewButton, 1,
+            FavoritesViewButton.FontScale, XL, YL, Size, Gap) > FavoritesViewButton.ActualWidth() - Size) ||
+        (RecentViewButton.Style != None && ViewButtonContentWidth(C, RecentViewButton, 2, RecentViewButton.FontScale,
+            XL, YL, Size, Gap) > RecentViewButton.ActualWidth() - Size))
+        return FNS_Small;
+    return AllSkinsButton.FontScale;
+}
+
+// View buttons draw their stock background, then the caption with an icon:
+// a grid before All skins, a star on each side of Favorites, a rewind clock
+// before Recent. Icon 0 grid, 1 stars, 2 clock.
+function DrawViewButton(Canvas C, GUIButton Button, byte Icon)
+{
+    local color SavedColor;
+    local byte SavedStyle;
+    local float L, T, W, H, XL, YL, Size, Gap, TextLeft, IconY;
+    local GUIComponent.eFontScale Scale;
+
+    if (Button.Style == None)
+        return;
+    SavedColor = C.DrawColor;
+    SavedStyle = C.Style;
+    L = Button.ActualLeft();
+    T = Button.ActualTop();
+    W = Button.ActualWidth();
+    H = Button.ActualHeight();
+    Button.Style.Draw(C, Button.MenuState, L, T, W, H);
+    Scale = ViewButtonFont(C);
+    ViewButtonContentWidth(C, Button, Icon, Scale, XL, YL, Size, Gap);
+    IconY = Round(T + (H - Size) * 0.5);
+    if (Icon == 1)
+        TextLeft = Round(L + (W - XL) * 0.5);
+    else
+        TextLeft = Round(L + (W - XL - Size - Gap) * 0.5 + Size + Gap);
+    Button.Style.DrawText(C, Button.MenuState, TextLeft, T, XL + 2, H, TXTA_Left, Button.Caption, Scale);
+    C.Style = 1;
+    if (Icon == 1)
+    {
+        DrawAmberStar(C, TextLeft - Gap - Size, IconY, Size);
+        DrawAmberStar(C, TextLeft + XL + Gap, IconY, Size);
+    }
+    else
+    {
+        C.SetDrawColor(205, 228, 255, 255);
+        if (Icon == 2)
+            DrawRewindClock(C, TextLeft - Gap - Size, IconY, Size);
+        else
+            DrawGridIcon(C, TextLeft - Gap - Size, IconY, Size);
+    }
+    C.DrawColor = SavedColor;
+    C.Style = SavedStyle;
+}
+
+function bool DrawAllViewButton(Canvas C)
+{
+    DrawViewButton(C, AllSkinsButton, 0);
+    return AllSkinsButton.Style != None;
+}
+
+function bool DrawFavoritesViewButton(Canvas C)
+{
+    DrawViewButton(C, FavoritesViewButton, 1);
+    return FavoritesViewButton.Style != None;
+}
+
+function bool DrawRecentViewButton(Canvas C)
+{
+    DrawViewButton(C, RecentViewButton, 2);
+    return RecentViewButton.Style != None;
 }
 
 function bool IsRecentRecord(int RecordIndex)
@@ -352,6 +579,16 @@ function bool ToggleFavorite(GUIComponent Sender)
     }
     class'SkinBrowserFavorites'.static.SetFavorite(
         PlayerRecords[SelectedRecord].DefaultName, !bRemoving);
+    // A bright chime to add and a low one to remove, played at double volume
+    // because it is a quiet sample. The 2K4 menus use neither, and both differ
+    // from Apply's confirmation.
+    if (PlayerOwner() != None)
+    {
+        if (bRemoving)
+            PlayerOwner().ClientPlaySound(sound'MenuSounds.MS_ListChangeDown', True, 2.0, SLOT_Interface);
+        else
+            PlayerOwner().ClientPlaySound(sound'MenuSounds.select3', False, 1.0, SLOT_Interface);
+    }
     RebuildCharacterList(True, NextRecord);
     return True;
 }
@@ -368,6 +605,9 @@ function InitializeBrowser()
     {
         bUpdatingControls = True;
         HideBrokenCheck.Checked(class'SkinBrowserSettings'.default.bHideBrokenSkins);
+        RespawnCheck.Checked(class'SkinBrowserSettings'.default.bRespawnOnApply);
+        // The floating browser may have changed this since this tab was built.
+        AutoRotateCheck.Checked(class'SkinBrowserSettings'.default.bAutoRotate);
         bUpdatingControls = False;
         SyncVoiceSelectionFromPlayer();
         SelectedRecord = FindCharacter(EquippedCharacterName);
@@ -405,7 +645,8 @@ function InitializeBrowser()
     GroupBox.ReadOnly(True);
     GroupBox.SetIndex(0);
     HideBrokenCheck.Checked(class'SkinBrowserSettings'.default.bHideBrokenSkins);
-    AutoRotateCheck.Checked(True);
+    RespawnCheck.Checked(class'SkinBrowserSettings'.default.bRespawnOnApply);
+    AutoRotateCheck.Checked(class'SkinBrowserSettings'.default.bAutoRotate);
     WeaponCheck.Checked(False);
     LoopAnimationCheck.Checked(False);
     bPortraitView = False;
@@ -459,6 +700,14 @@ function RefreshEquippedCharacter()
 // Fill a ten-vertex star with ordinary canvas tiles; no font glyph or asset dependency.
 function DrawFavoriteStar(Canvas C, float X, float Y, float Size)
 {
+    C.Style = 1;
+    C.SetDrawColor(255, 220, 70, 255);
+    FillStar(C, X, Y, Size);
+}
+
+// Five-pointed star in the current draw colour, scanline filled.
+function FillStar(Canvas C, float X, float Y, float Size)
+{
     local int i, j, k, Row, Count;
     local float Angle, Radius, ScanY, Temp;
     local float VX[10], VY[10], Crossings[10];
@@ -473,8 +722,6 @@ function DrawFavoriteStar(Canvas C, float X, float Y, float Size)
         VX[i] = X + Size * 0.5 + Cos(Angle) * Radius;
         VY[i] = Y + Size * 0.5 + Sin(Angle) * Radius;
     }
-    C.Style = 1;
-    C.SetDrawColor(255, 220, 70, 255);
     for (Row = 0; Row < int(Size); Row++)
     {
         ScanY = Y + Row + 0.5;
@@ -771,6 +1018,13 @@ function HideBrokenChanged(GUIComponent Sender)
     if (HideBrokenCheck.IsChecked())
         CheckBrokenRecords(True);
     RebuildCharacterList(True, -1);
+}
+
+function RespawnOnApplyChanged(GUIComponent Sender)
+{
+    if (bUpdatingControls)
+        return;
+    class'SkinBrowserSettings'.static.SetRespawnOnApply(RespawnCheck.IsChecked());
 }
 
 function bool CharacterMatches(int RecordIndex, string Query)
@@ -2406,6 +2660,7 @@ function AutoRotateChanged(GUIComponent Sender)
     if (bUpdatingControls)
         return;
 
+    class'SkinBrowserSettings'.static.SetAutoRotate(AutoRotateCheck.IsChecked());
     if (!AutoRotateCheck.IsChecked() && (PreviewActor != None))
         PreviewActor.SpinRate = 0;
 }
@@ -2734,6 +2989,7 @@ function bool ApplyClicked(GUIComponent Sender)
     local PlayerController PC;
     local xUtil.PlayerRecord Rec;
     local string VoiceClassName;
+    local bool bRespawning;
 
     if ((SelectedRecord < 0) || (SelectedRecord >= PlayerRecords.Length))
         return True;
@@ -2771,15 +3027,25 @@ function bool ApplyClicked(GUIComponent Sender)
         UpdateFavoriteControls();
     if (Rec.DefaultName ~= EquippedCharacterName)
         NameLabel.Caption = Rec.DefaultName @ "[Equipped]";
+    // Opt-in only: a suicide costs a point. The respawner skips it while
+    // carrying a flag, driving, dead, spectating, or in a limited-lives mode.
+    if (class'SkinBrowserSettings'.default.bRespawnOnApply)
+        bRespawning = class'SkinBrowserRespawner'.static.Request(PC, Rec.DefaultName);
 
     if (PC.Level.NetMode == NM_Standalone)
     {
         PC.ClientPlaySound(sound'MenuSounds.selectJ', False, 1.0, SLOT_Interface);
-        StatusLabel.Caption = "Skin active - respawn to apply";
+        if (bRespawning)
+            StatusLabel.Caption = "Skin active - respawning";
+        else
+            StatusLabel.Caption = "Skin active - respawn to apply";
     }
     else
     {
-        StatusLabel.Caption = "Change requested - respawn to apply";
+        if (bRespawning)
+            StatusLabel.Caption = "Change requested - respawn pending";
+        else
+            StatusLabel.Caption = "Change requested - respawn to apply";
         ApplyButton.DisableMe();
     }
     StatusLabel.KillTimer();
@@ -2984,8 +3250,9 @@ function bool ShortcutsClicked(GUIComponent Sender)
     return True;
 }
 
-// Credits is the one inverted button: gold fill with light-blue text, a lighter
-// gold on hover, and a pale edge, so it stands apart from blue/gold buttons.
+// Credits is the one bronze button: a muted antique-gold fill in the same
+// value range as the blue buttons, cream text, and a pale bronze edge, so it
+// stands apart without glaring.
 function bool DrawCreditsButton(Canvas C)
 {
     local color SavedColor, SavedFontColor;
@@ -2996,41 +3263,40 @@ function bool DrawCreditsButton(Canvas C)
     SavedColor = C.DrawColor;
     SavedStyle = C.Style;
     bHover = CreditsButton.MenuState == MSAT_Watched || CreditsButton.MenuState == MSAT_Focused;
-    R = 214; G = 168; B = 34;
+    R = 138; G = 106; B = 28;
     if (CreditsButton.MenuState == MSAT_Pressed)
     {
-        R = 190; G = 146; B = 26;
+        R = 112; G = 84; B = 20;
     }
     else if (bHover)
     {
-        R = 240; G = 196; B = 62;
+        R = 166; G = 130; B = 44;
     }
     C.Style = 1;
     C.SetDrawColor(R, G, B, 255);
     C.SetPos(CreditsButton.ActualLeft(), CreditsButton.ActualTop());
     C.DrawTile(Texture'Engine.WhiteSquareTexture', CreditsButton.ActualWidth(), CreditsButton.ActualHeight(),
         0, 0, 2, 2);
-    C.SetDrawColor(255, 236, 160, 255);
+    C.SetDrawColor(196, 164, 96, 255);
     if (bHover)
-        C.SetDrawColor(255, 250, 220, 255);
+        C.SetDrawColor(232, 204, 140, 255);
     DrawGridFrame(C, CreditsButton.ActualLeft(), CreditsButton.ActualTop(), CreditsButton.ActualWidth(),
         CreditsButton.ActualHeight(), FMax(1.0, Round(Controller.ResY / 1080.0)));
     if (CreditsButton.Style != None)
     {
         SavedFontColor = CreditsButton.Style.FontColors[0];
-        // The preview hint line's light blue, over a thin navy shadow so it
-        // stays legible on gold.
+        // Cream over a thin dark-brown shadow so it stays legible on bronze.
         Shadow = FMax(1.0, Round(Controller.ResY / 1080.0));
-        CreditsButton.Style.FontColors[0].R = 18;
+        CreditsButton.Style.FontColors[0].R = 48;
         CreditsButton.Style.FontColors[0].G = 34;
-        CreditsButton.Style.FontColors[0].B = 82;
+        CreditsButton.Style.FontColors[0].B = 8;
         CreditsButton.Style.FontColors[0].A = 255;
         CreditsButton.Style.DrawText(C, MSAT_Blurry, CreditsButton.ActualLeft() + Shadow,
             CreditsButton.ActualTop() + Shadow, CreditsButton.ActualWidth(), CreditsButton.ActualHeight(),
             TXTA_Center, CreditsButton.Caption, CreditsButton.FontScale);
-        CreditsButton.Style.FontColors[0].R = 190;
-        CreditsButton.Style.FontColors[0].G = 220;
-        CreditsButton.Style.FontColors[0].B = 255;
+        CreditsButton.Style.FontColors[0].R = 255;
+        CreditsButton.Style.FontColors[0].G = 240;
+        CreditsButton.Style.FontColors[0].B = 200;
         CreditsButton.Style.DrawText(C, MSAT_Blurry, CreditsButton.ActualLeft(), CreditsButton.ActualTop(),
             CreditsButton.ActualWidth(), CreditsButton.ActualHeight(), TXTA_Center, CreditsButton.Caption,
             CreditsButton.FontScale);
@@ -3065,7 +3331,7 @@ defaultproperties
         TextColor=(R=255,G=210,B=0,A=255)
         TextFont="UT2HeaderFont"
         WinTop=0.012000
-        WinLeft=0.040000
+        WinLeft=0.080000
         WinWidth=0.840000
         WinHeight=0.060000
         bBoundToParent=True
@@ -3077,12 +3343,13 @@ defaultproperties
         Caption="All skins"
         Hint="Browse all installed selectable skins."
         WinTop=0.095000
-        WinLeft=0.055000
+        WinLeft=0.095000
         WinWidth=0.112000
         WinHeight=0.044000
         TabOrder=0
         bBoundToParent=True
         OnClick=SkinBrowserWidget.ShowAllSkins
+        OnDraw=SkinBrowserWidget.DrawAllViewButton
         OnRendered=SkinBrowserWidget.DrawAllViewMarker
     End Object
     AllSkinsButton=GUIButton'BetterSkinBrowser.SkinBrowserWidget.AllCharacterSkins'
@@ -3091,12 +3358,13 @@ defaultproperties
         Caption="Favorites (0)"
         Hint="Browse favorite skins using the current search, sort, and grouping."
         WinTop=0.095000
-        WinLeft=0.175000
+        WinLeft=0.215000
         WinWidth=0.130000
         WinHeight=0.044000
         TabOrder=1
         bBoundToParent=True
         OnClick=SkinBrowserWidget.ShowFavorites
+        OnDraw=SkinBrowserWidget.DrawFavoritesViewButton
         OnRendered=SkinBrowserWidget.DrawFavoritesViewMarker
     End Object
     FavoritesViewButton=GUIButton'BetterSkinBrowser.SkinBrowserWidget.FavoriteCharacterSkins'
@@ -3105,12 +3373,13 @@ defaultproperties
         Caption="Recent (0)"
         Hint="Browse recently equipped skins, newest first. Search applies; sort and grouping do not."
         WinTop=0.095000
-        WinLeft=0.313000
+        WinLeft=0.353000
         WinWidth=0.112000
         WinHeight=0.044000
         TabOrder=19
         bBoundToParent=True
         OnClick=SkinBrowserWidget.ShowRecent
+        OnDraw=SkinBrowserWidget.DrawRecentViewButton
         OnRendered=SkinBrowserWidget.DrawRecentViewMarker
     End Object
     RecentViewButton=GUIButton'BetterSkinBrowser.SkinBrowserWidget.RecentCharacterSkins'
@@ -3119,11 +3388,12 @@ defaultproperties
         Caption="Add favorite"
         Hint="Save or remove this character as a local favorite immediately."
         WinTop=0.855000
-        WinLeft=0.515000
+        WinLeft=0.555000
         WinWidth=0.185000
         WinHeight=0.050000
         TabOrder=20
         bBoundToParent=True
+        OnClickSound=CS_None
         OnClick=SkinBrowserWidget.ToggleFavorite
     End Object
     FavoriteButton=GUIButton'BetterSkinBrowser.SkinBrowserWidget.ToggleCharacterFavorite'
@@ -3134,7 +3404,7 @@ defaultproperties
         Hint="Match every search word in any order: name, race, sex, mesh, or skin texture package. Up/Down browse results; Enter moves to the list."
         OnCreateComponent=CharacterSearch.InternalOnCreateComponent
         WinTop=0.150000
-        WinLeft=0.055000
+        WinLeft=0.095000
         WinWidth=0.326000
         WinHeight=0.050000
         TabOrder=2
@@ -3147,7 +3417,7 @@ defaultproperties
         Caption="x"
         Hint="Clear search while keeping the current view, sort, grouping, and visible selection."
         WinTop=0.150000
-        WinLeft=0.389000
+        WinLeft=0.429000
         WinWidth=0.036000
         WinHeight=0.050000
         TabOrder=3
@@ -3162,7 +3432,7 @@ defaultproperties
         Hint="Choose the order used within each group."
         OnCreateComponent=CharacterSort.InternalOnCreateComponent
         WinTop=0.205000
-        WinLeft=0.055000
+        WinLeft=0.095000
         WinWidth=0.370000
         WinHeight=0.045000
         TabOrder=4
@@ -3177,7 +3447,7 @@ defaultproperties
         Hint="Group matching characters by race or inferred mesh family."
         OnCreateComponent=CharacterGroup.InternalOnCreateComponent
         WinTop=0.255000
-        WinLeft=0.055000
+        WinLeft=0.095000
         WinWidth=0.370000
         WinHeight=0.045000
         TabOrder=5
@@ -3192,9 +3462,9 @@ defaultproperties
         Hint="Up/Down, Page Up/Down, Home/End browse skins. Ctrl+Enter applies, Ctrl+D toggles favorite, Ctrl+F searches."
         FontScale=FNS_Medium
         WinTop=0.310000
-        WinLeft=0.055000
+        WinLeft=0.095000
         WinWidth=0.370000
-        WinHeight=0.455000
+        WinHeight=0.425000
         TabOrder=6
         bBoundToParent=True
         OnChange=SkinBrowserWidget.CharacterChanged
@@ -3209,9 +3479,9 @@ defaultproperties
         OnCreateComponent=InstalledCharacterGrid.InternalOnCreateComponent
         Hint="Arrow keys move through portraits. Ctrl+Enter applies, Ctrl+D toggles favorite, Ctrl+F searches."
         WinTop=0.310000
-        WinLeft=0.055000
+        WinLeft=0.095000
         WinWidth=0.370000
-        WinHeight=0.455000
+        WinHeight=0.425000
         TabOrder=6
         bVisible=False
         bBoundToParent=True
@@ -3222,8 +3492,8 @@ defaultproperties
     Begin Object Class=GUIButton Name=CharacterLayoutToggle
         Caption="Grid"
         Hint="Switch between the text list and a portrait grid."
-        WinTop=0.785000
-        WinLeft=0.335000
+        WinTop=0.755000
+        WinLeft=0.375000
         WinWidth=0.090000
         WinHeight=0.040000
         TabOrder=25
@@ -3235,8 +3505,8 @@ defaultproperties
     Begin Object Class=GUIButton Name=RandomCharacterSkin
         Caption=""
         Hint="Preview a random skin from the current view and search."
-        WinTop=0.785000
-        WinLeft=0.300000
+        WinTop=0.755000
+        WinLeft=0.340000
         WinWidth=0.030000
         WinHeight=0.040000
         TabOrder=24
@@ -3253,7 +3523,7 @@ defaultproperties
         Hint="Hide installed skins whose model cannot be loaded; in a match they appear as the default model. Each model is checked once and remembered."
         OnCreateComponent=HideBrokenCharacterSkins.InternalOnCreateComponent
         WinTop=0.860000
-        WinLeft=0.245000
+        WinLeft=0.285000
         WinWidth=0.180000
         WinHeight=0.036000
         TabOrder=27
@@ -3262,12 +3532,28 @@ defaultproperties
     End Object
     HideBrokenCheck=moCheckBox'BetterSkinBrowser.SkinBrowserWidget.HideBrokenCharacterSkins'
 
+    Begin Object Class=moCheckBox Name=RespawnOnApplyCheck
+        Caption="Respawn on Apply"
+        CaptionWidth=0.860000
+        LabelJustification=TXTA_Right
+        Hint="Suicide after Apply so the new skin shows at once. Costs a point; skipped while carrying a flag, driving, or in modes with limited lives."
+        OnCreateComponent=RespawnOnApplyCheck.InternalOnCreateComponent
+        WinTop=0.912000
+        WinLeft=0.655000
+        WinWidth=0.230000
+        WinHeight=0.036000
+        TabOrder=28
+        bBoundToParent=True
+        OnChange=SkinBrowserWidget.RespawnOnApplyChanged
+    End Object
+    RespawnCheck=moCheckBox'BetterSkinBrowser.SkinBrowserWidget.RespawnOnApplyCheck'
+
     Begin Object Class=SkinBrowserFitLabel Name=CharacterResultLabel
         Caption="0 skins"
         TextAlign=TXTA_Left
         TextColor=(R=255,G=255,B=0,A=255)
-        WinTop=0.785000
-        WinLeft=0.055000
+        WinTop=0.755000
+        WinLeft=0.095000
         WinWidth=0.275000
         WinHeight=0.040000
         bBoundToParent=True
@@ -3280,7 +3566,7 @@ defaultproperties
         ImageStyle=ISTY_Stretched
         ImageRenderStyle=MSTY_Normal
         WinTop=0.095000
-        WinLeft=0.515000
+        WinLeft=0.555000
         WinWidth=0.350000
         WinHeight=0.285000
         RenderWeight=0.520000
@@ -3294,7 +3580,7 @@ defaultproperties
         ImageRenderStyle=MSTY_Normal
         AspectRatioScale=True
         WinTop=0.095000
-        WinLeft=0.515000
+        WinLeft=0.555000
         WinWidth=0.350000
         WinHeight=0.285000
         RenderWeight=0.525000
@@ -3308,7 +3594,7 @@ defaultproperties
         StyleName="NoBackground"
         Hint="Drag to rotate, Shift-drag or right-drag to pan, and use the wheel to zoom."
         WinTop=0.095000
-        WinLeft=0.515000
+        WinLeft=0.555000
         WinWidth=0.350000
         WinHeight=0.285000
         RenderWeight=0.530000
@@ -3327,7 +3613,7 @@ defaultproperties
         Caption="Portrait"
         Hint="Show the selected skin's portrait."
         WinTop=0.465000
-        WinLeft=0.705000
+        WinLeft=0.745000
         WinWidth=0.086000
         WinHeight=0.040000
         RenderWeight=0.550000
@@ -3342,7 +3628,7 @@ defaultproperties
         TextAlign=TXTA_Center
         TextColor=(R=255,G=255,B=0,A=255)
         WinTop=0.385000
-        WinLeft=0.515000
+        WinLeft=0.555000
         WinWidth=0.350000
         WinHeight=0.040000
         FontScale=FNS_Large
@@ -3356,7 +3642,7 @@ defaultproperties
         TextAlign=TXTA_Center
         TextColor=(R=190,G=220,B=255,A=255)
         WinTop=0.425000
-        WinLeft=0.515000
+        WinLeft=0.555000
         WinWidth=0.350000
         WinHeight=0.035000
         bBoundToParent=True
@@ -3367,7 +3653,7 @@ defaultproperties
         Caption="Normal"
         Hint="Preview the normal character materials."
         WinTop=0.465000
-        WinLeft=0.515000
+        WinLeft=0.555000
         WinWidth=0.062000
         WinHeight=0.040000
         TabOrder=7
@@ -3380,7 +3666,7 @@ defaultproperties
         Caption="Red"
         Hint="Preview UT2004's red-team materials."
         WinTop=0.465000
-        WinLeft=0.583000
+        WinLeft=0.623000
         WinWidth=0.055000
         WinHeight=0.040000
         TabOrder=8
@@ -3394,7 +3680,7 @@ defaultproperties
         Caption="Blue"
         Hint="Preview UT2004's blue-team materials."
         WinTop=0.465000
-        WinLeft=0.644000
+        WinLeft=0.684000
         WinWidth=0.055000
         WinHeight=0.040000
         TabOrder=9
@@ -3408,7 +3694,7 @@ defaultproperties
         Caption="Reset"
         Hint="Restore the default camera and model rotation."
         WinTop=0.465000
-        WinLeft=0.797000
+        WinLeft=0.837000
         WinWidth=0.062000
         WinHeight=0.040000
         TabOrder=11
@@ -3422,8 +3708,8 @@ defaultproperties
         CaptionWidth=0.750000
         Hint="Resume automatic rotation after a short period without viewport input."
         OnCreateComponent=CharacterAutoRotate.InternalOnCreateComponent
-        WinTop=0.517000
-        WinLeft=0.515000
+        WinTop=0.510000
+        WinLeft=0.555000
         WinWidth=0.350000
         WinHeight=0.036000
         TabOrder=12
@@ -3437,8 +3723,8 @@ defaultproperties
         CaptionWidth=0.750000
         Hint="Preview the default weapon-holding stance."
         OnCreateComponent=CharacterShockRifle.InternalOnCreateComponent
-        WinTop=0.561000
-        WinLeft=0.515000
+        WinTop=0.554000
+        WinLeft=0.555000
         WinWidth=0.350000
         WinHeight=0.036000
         TabOrder=13
@@ -3452,8 +3738,8 @@ defaultproperties
         CaptionWidth=0.750000
         Hint="Repeat the selected preview animation until another is selected."
         OnCreateComponent=CharacterLoopAnimation.InternalOnCreateComponent
-        WinTop=0.605000
-        WinLeft=0.515000
+        WinTop=0.598000
+        WinLeft=0.555000
         WinWidth=0.350000
         WinHeight=0.036000
         TabOrder=14
@@ -3462,15 +3748,16 @@ defaultproperties
     End Object
     LoopAnimationCheck=moCheckBox'BetterSkinBrowser.SkinBrowserWidget.CharacterLoopAnimation'
 
+
     Begin Object Class=moComboBox Name=CharacterAnimation
         Caption="Animation:"
         CaptionWidth=0.230000
         Hint="Preview compatible idle and species taunt animations."
         OnCreateComponent=CharacterAnimation.InternalOnCreateComponent
-        WinTop=0.652000
-        WinLeft=0.515000
+        WinTop=0.641000
+        WinLeft=0.555000
         WinWidth=0.350000
-        WinHeight=0.040000
+        WinHeight=0.038000
         TabOrder=15
         bAlwaysNotify=True
         bBoundToParent=True
@@ -3483,10 +3770,10 @@ defaultproperties
         CaptionWidth=0.288000
         Hint="Choose the voice saved with this character; Character default uses the skin's assigned voice."
         OnCreateComponent=CharacterVoicePack.InternalOnCreateComponent
-        WinTop=0.700000
-        WinLeft=0.515000
+        WinTop=0.683000
+        WinLeft=0.555000
         WinWidth=0.280000
-        WinHeight=0.040000
+        WinHeight=0.038000
         TabOrder=16
         bBoundToParent=True
         OnChange=SkinBrowserWidget.VoicePackChanged
@@ -3496,10 +3783,10 @@ defaultproperties
     Begin Object Class=GUIButton Name=DefaultCharacterVoice
         Caption="Default"
         Hint="Select this character's assigned default voice pack. Press Apply to save it."
-        WinTop=0.700000
-        WinLeft=0.800000
+        WinTop=0.683000
+        WinLeft=0.840000
         WinWidth=0.065000
-        WinHeight=0.040000
+        WinHeight=0.038000
         TabOrder=17
         bBoundToParent=True
         OnClick=SkinBrowserWidget.DefaultVoiceClicked
@@ -3511,10 +3798,10 @@ defaultproperties
         CaptionWidth=0.230000
         Hint="Preview lines from the voice pack selected above."
         OnCreateComponent=CharacterVoiceLine.InternalOnCreateComponent
-        WinTop=0.748000
-        WinLeft=0.515000
+        WinTop=0.725000
+        WinLeft=0.555000
         WinWidth=0.350000
-        WinHeight=0.040000
+        WinHeight=0.038000
         TabOrder=18
         bAlwaysNotify=True
         bBoundToParent=True
@@ -3526,8 +3813,8 @@ defaultproperties
         Caption="3D preview"
         TextAlign=TXTA_Center
         TextColor=(R=190,G=220,B=255,A=255)
-        WinTop=0.797000
-        WinLeft=0.515000
+        WinTop=0.767000
+        WinLeft=0.555000
         WinWidth=0.350000
         WinHeight=0.033000
         bBoundToParent=True
@@ -3539,7 +3826,7 @@ defaultproperties
         Caption="Apply"
         Hint="Activate the selected character and chosen voice pack."
         WinTop=0.855000
-        WinLeft=0.715000
+        WinLeft=0.755000
         WinWidth=0.130000
         WinHeight=0.050000
         TabOrder=21
@@ -3552,7 +3839,7 @@ defaultproperties
         Caption="Credits"
         Hint="Show who made Unreal Skin Browser."
         WinTop=0.855000
-        WinLeft=0.040000
+        WinLeft=0.080000
         WinWidth=0.090000
         WinHeight=0.050000
         TabOrder=23
@@ -3566,7 +3853,7 @@ defaultproperties
         Caption="Shortcuts"
         Hint="List the keyboard shortcuts."
         WinTop=0.855000
-        WinLeft=0.136000
+        WinLeft=0.176000
         WinWidth=0.100000
         WinHeight=0.050000
         TabOrder=26
@@ -3579,8 +3866,8 @@ defaultproperties
         Caption="Close"
         Hint="Close Unreal Skin Browser without applying the preview selection."
         WinTop=0.855000
-        WinLeft=0.850000
-        WinWidth=0.100000
+        WinLeft=0.826000
+        WinWidth=0.090000
         WinHeight=0.050000
         TabOrder=22
         bVisible=False
@@ -3590,6 +3877,8 @@ defaultproperties
     CloseButton=GUIButton'BetterSkinBrowser.SkinBrowserWidget.CloseBrowserButton'
 
     PreviewFOV=15
+    CardFrame=Texture'2K4Menus.NewControls.Display1'
+    CardFrameScale=1.250000
     AutoRotateDelay=3.000000
     PreviewTeam=255
     SelectedRecord=-1
